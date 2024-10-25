@@ -11,14 +11,40 @@ Design and develop a high-performance, scalable real-time chat application that 
 ### Work Distrubution Form
 | Tasks      | Worker |
 | ----------- | ----------- |
-| User Authentication| Yingying Liu|
-| Websocket   | Ze Yang        |
-| Backend   | Yang Hu        |
+| User Authentication Module | Yingying Liu  |
+| Instant Messaging  Module   | Yang Hu   |
+| API and Database Design & Implementation  | Ze Yang  |
 
-### User Authentication  
+### User Interface User Authentication
 
+TODO: Yingying Liu
 
-### Websocket Desgin 
+#### User Authentication Module
+
+For our Minimal Viable Product (MVP), the User Authentication Module should support the following features:
+
+- User Login
+- User Logout
+- Fetch User Online Status
+- User Sign Up
+- Chat Room Management
+  - Chat Room Creation
+  - Chat Room Deleteion
+  - Joining Chat Room
+  - Leaving Chat Room
+
+Tables:
+
+- User
+- ChatRoom
+- UserInChatRoom
+- Messages
+
+### Instant Messaging Module
+
+TODO: Yang Hu
+
+https://www.zupzup.org/epoll-with-rust/index.html
 
 The desgin of websocket will include two parts: client side and server side.
 
@@ -30,8 +56,8 @@ The desgin of websocket will include two parts: client side and server side.
 
    The server mainly responsible for the communication between the clients. It will receive the messge from the client and broadcast it to other clients. The server will ensure that each client has an unique connection.
    
-     
 
-### Backend Desgin
+### API and Database Desgin
 
+TODO: Ze Yang
 
