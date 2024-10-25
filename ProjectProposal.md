@@ -33,12 +33,6 @@ For our Minimal Viable Product (MVP), the User Authentication Module should supp
   - Joining Chat Room
   - Leaving Chat Room
 
-Tables:
-
-- User
-- ChatRoom
-- UserInChatRoom
-- Messages
 
 ### Instant Messaging Module
 
@@ -61,3 +55,13 @@ The desgin of websocket will include two parts: client side and server side.
 
 TODO: Ze Yang
 
+- Tools: Apifox
+- Style: RESTful API
+- Backend framework: 
+
+Tables:
+
+- User
+- ChatRoom
+- UserInChatRoom
+- Messages
