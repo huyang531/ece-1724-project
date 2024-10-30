@@ -42,25 +42,26 @@ Tables:
 
 ### User Authentication Module
 
-TODO: Yingying Liu
+Our User Authentication Module will manage user sessions by securely verifying and tracking user credentials. This module provides essential authentication features, allowing users to log in and view other users’ statuses in the chatroom they have joined. Users can also log out at any time to end their session. 
 
 #### Basic Requirements
 
 For our Minimal Viable Product (MVP), the User Authentication Module should support the following features:
 
-- User Login
-- User Logout
-- Fetch User Online Status
-- User Sign Up
+- User Login：Authenticate users by comparing provided login credentials against stored encrypted data.
+- User Logout: Enable users to securely log out, terminating their session and updating their online status.
+- Fetch User Online Status: Allow logged-in users to see the online status of other users within the same chatroom.
+- User Sign Up: Allow users to create a new account
 - Chat Room Management
-  - Chat Room Creation
-  - Chat Room Deleteion
-  - Joining Chat Room
-  - Leaving Chat Room
+  - Chat Room Creation: Allow users to create new chatrooms.
+  - Joining Chat Room: Enable users to join existing chatrooms.
+  - Leaving Chat Room: Allow users to leave any chatroom they have joined.
 
 #### Technical Stack
 
-TODO
+Cryptography: argon2 algorithm for password hashing.
+Database: MySQL for data persistence.
+Frontend Framework: A front-end user interface with command-line utility
 
 ### Instant Messaging Module
 
