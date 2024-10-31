@@ -18,8 +18,20 @@ Design and develop a high-performance, scalable real-time chat application that 
 
 ### System Design
 
-TODO: Ze Yang
-> 可以考虑加张图？
+![System Design](SystemDesign.jpg)
+<p align="center">Figure 1 System Overview</p>
+
+The chat application is designed as a distributed system with a client-server architecture, supporting real-time messaging and high scalability. Figure 1 illustrates the main components of the system, highlighting the separation of concerns and modular structure:
+
+1. **Frontend Interface**: Clients connect via a command-line interface (CLI) that interacts with the backend through RESTful APIs for user-related functions (e.g., login, signup) and WebSocket connections for real-time message exchange. Each client maintains a persistent WebSocket connection to ensure immediate message delivery and presence detection.
+
+2. **Instant Messaging Module and User Authentication Module**: This two modules handle all core functionalities, including user authentication, chat room management, and message broadcasting. Authentication requests are managed via RESTful APIs, while messaging leverages WebSockets for low-latency, asynchronous data transfer. Instant Messaging Module is built with asynchronous programming models, allowing the execution of multiple tasks, such as handling concurrent WebSocket connections.
+
+3. **Data Storage**: A MySQL database is used to store user data, chat rooms, and message history. The database schema includes tables for Users, ChatRooms, UserInChatRoom (for membership tracking), and Messages to ensure data integrity and efficient querying.
+
+4. **Scalability and Performance**: Leveraging Rust’s async/await model and the Tokio runtime, the backend can efficiently handle multiple concurrent WebSocket connections. By separating API and WebSocket processing, the system achieves both modularity and high performance. The backend is designed to handle increased load by distributing client connections and load balancing message broadcast requests.
+
+This design ensures that the system can support real-time, scalable, and low-latency messaging for a potentially large user base.
 
 #### API Design
 
@@ -28,17 +40,27 @@ TODO: Ze Yang
 - Backend framework: 
 
 #### Data Model
+ **Entities**: 
+  - **Users**
+  : `user_id` (PK), `username`, `email`, `password_hash`, `status`, `created_at`
 
-Tables:
+- **ChatRooms**
+  : `chatroom_id` (PK), `room_name`, `created_by` (FK to `Users.user_id`), `created_at`
 
-- User
-- ChatRoom
-- UserInChatRoom
-- Messages
+- **UserInChatRoom** (Associative Entity)
+  : `user_id` (FK to `Users.user_id`), `chatroom_id` (FK to `ChatRooms.chatroom_id`), `joined_at`
+  - Composite Key: (`user_id`, `chatroom_id`)
 
-#### Scalability and Performance (Optional)
+- **Messages**
+  : `message_id` (PK), `chatroom_id` (FK to `ChatRooms.chatroom_id`), `sender_id` (FK to `Users.user_id`), `message_text`, `sent_at`
 
-> Please metion we are using RESTful HTTP APIs and asynchronous programming model.
+**Relationships**:
+   - Users can create multiple ChatRooms (1-to-many relationship).
+   - Users can join multiple ChatRooms, and ChatRooms can have multiple Users (many-to-many relationship represented by `UserInChatRoom`).
+   - Users can send multiple Messages in ChatRooms (1-to-many relationship).
+   - ChatRooms contain multiple Messages (1-to-many relationship).
+
+
 
 ### User Authentication Module
 
