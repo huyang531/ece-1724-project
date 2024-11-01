@@ -16,6 +16,13 @@ Design and develop a high-performance, scalable real-time chat application that 
 | User Authentication Module | Yingying Liu  |
 | Instant Messaging  Module   | Yang Hu   |
 
+### Time Line
+| Tasks      | Time |
+| ----------- | ----------- |
+| System Design  | two weeks  |
+| User Authentication Module | Three Weeks |
+| Instant Messaging  Module   | Three Weeks |
+
 ### System Design
 
 ![System Design](SystemDesign.jpg)
@@ -37,7 +44,17 @@ This design ensures that the system can support real-time, scalable, and low-lat
 
 - Tools: Apifox
 - Style: RESTful API
-- Backend framework: 
+  
+#### Backend framework: MVC (Model-View-Controller)
+
+The **MVC pattern** is often ideal for web applications like chat apps because it separates concerns, making the code more maintainable and testable:
+
+- **Model**: Represents the data and database interactions. In this chat app, the `Users`, `ChatRooms`, `Messages`, and `UserInChatRoom` entities would reside in the Model layer.
+
+- **View**: Typically handles user interfaces; in this case, it could represent the WebSocket and RESTful APIs for delivering data to the client.
+
+- **Controller**: Acts as an intermediary between the Model and View. The controller processes user inputs, interacts with the Model to fetch or store data, and then sends appropriate responses via the View.
+
 
 #### Data Model
  **Entities**: 
