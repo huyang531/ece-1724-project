@@ -12,7 +12,7 @@ Design and develop a high-performance, scalable real-time chat application that 
 
 | Tasks      | Worker |
 | ----------- | ----------- |
-| System Design  | Ze Yang  |
+| System Design  | Ze Yang  1010007145|
 | User Authentication Module | Yingying Liu  |
 | Instant Messaging  Module   | Yang Hu   |
 
