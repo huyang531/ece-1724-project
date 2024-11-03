@@ -98,9 +98,9 @@ For our Minimal Viable Product (MVP), the User Authentication Module should supp
 
 #### Technical Stack
 
-Cryptography: argon2 algorithm for password hashing.
-Database: MySQL for data persistence.
-Frontend Framework: A front-end user interface with command-line utility
+- `Cryptography`: argon2 algorithm for password hashing.
+- `Database`: MySQL for data persistence.
+- `Frontend Framework`: A front-end user interface with command-line utility
 
 ### Instant Messaging Module
 
