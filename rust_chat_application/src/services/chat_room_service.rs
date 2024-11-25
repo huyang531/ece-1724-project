@@ -1,0 +1,24 @@
+use crate::repository::chat_room_repo::ChatRoomRepository;
+
+pub struct ChatRoomService {
+    repository: ChatRoomRepository,
+}
+
+impl ChatRoomService {
+    pub fn new() -> Self {
+        let repository = ChatRoomRepository::new();
+        ChatRoomService { repository }
+    }
+
+    pub async fn create_chat_room(&self, room_name: String, created_by: i32) -> Result<(), String> {
+        self.repository.create_chat_room(&room_name, created_by).await
+    }
+
+    pub async fn join_chat_room(&self, user_id: i32, chatroom_id: i32) -> Result<(), String> {
+        self.repository.add_user_to_chat_room(user_id, chatroom_id).await
+    }
+
+    pub async fn leave_chat_room(&self, user_id: i32, chatroom_id: i32) -> Result<(), String> {
+        self.repository.remove_user_from_chat_room(user_id, chatroom_id).await
+    }
+}

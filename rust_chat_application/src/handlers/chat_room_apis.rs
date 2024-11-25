@@ -1,31 +1,52 @@
-use axum::{extract::Json, response::IntoResponse};
+use axum::{extract::Json, http::StatusCode, response::IntoResponse};
 use serde::Deserialize;
+use serde_json::json;
+use crate::services::chat_room_service::ChatRoomService;
 
 #[derive(Deserialize)]
 pub struct CreateChatRoomPayload {
-    room_name: String,
+    pub room_name: String,
+    pub user_id: i32
 }
 
 #[derive(Deserialize)]
 pub struct JoinChatRoomPayload {
-    user_id: i32,
-    room_id: i32,
+    pub user_id: i32,
+    pub room_id: i32,
 }
 
 #[derive(Deserialize)]
 pub struct LeaveChatRoomPayload {
-    user_id: i32,
-    room_id: i32,
+    pub user_id: i32,
+    pub room_id: i32,
 }
 
-pub async fn create_chat_room(Json(payload): Json<CreateChatRoomPayload>) -> impl IntoResponse {
-    // Logic to handle creating a chat room goes here
+pub async fn create_chat_room(
+    Json(payload): Json<CreateChatRoomPayload>,
+) -> impl IntoResponse {
+    let service = ChatRoomService::new();
+    match service.create_chat_room(payload.room_name,payload.user_id).await {
+        Ok(_) => (StatusCode::CREATED, Json(json!({"message": "Chat room created"}))),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": e}))),
+    }
 }
 
-pub async fn join_chat_room(Json(payload): Json<JoinChatRoomPayload>) -> impl IntoResponse {
-    // Logic to handle joining a chat room goes here
+pub async fn join_chat_room(
+    Json(payload): Json<JoinChatRoomPayload>,
+) -> impl IntoResponse {
+    let service = ChatRoomService::new();
+    match service.join_chat_room(payload.user_id, payload.room_id).await {
+        Ok(_) => (StatusCode::OK, Json(json!({"message": "Joined chat room"}))),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": e}))),
+    }
 }
 
-pub async fn leave_chat_room(Json(payload): Json<LeaveChatRoomPayload>) -> impl IntoResponse {
-    // Logic to handle leaving a chat room goes here
+pub async fn leave_chat_room(
+    Json(payload): Json<LeaveChatRoomPayload>,
+) -> impl IntoResponse {
+    let service = ChatRoomService::new();
+    match service.leave_chat_room(payload.user_id, payload.room_id).await {
+        Ok(_) => (StatusCode::OK, Json(json!({"message": "Left chat room"}))),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": e}))),
+    }
 }
