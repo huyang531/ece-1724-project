@@ -16,6 +16,8 @@ mod database;
 #[tokio::main]
 async fn main() {
      // initilize the connection
+     //url format: mysql://username:password@localhost/database_name
+     //remember you also need to modify it at repository layer
      let database_url = "mysql://chat_user:password@localhost/chat_app";
      let pool = Pool::new(database_url);
  
