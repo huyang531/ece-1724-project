@@ -41,11 +41,11 @@ use axum::http::StatusCode;
 pub async fn user_signup(Json(payload): Json<SignupPayload>) -> impl IntoResponse {
     let service = USERSERVICE.lock().await;
     match service.user_check_exist(payload.email.clone()).await {
-        Ok(_) => (
+        Err(_e) => (
             StatusCode::BAD_REQUEST,
             Json(json!({"error": "this email has existed"})),
         ),
-        Err(_e) => {
+        Ok(_) => {
             match service
                 .user_sign_up(
                     payload.email,
@@ -75,16 +75,26 @@ pub async fn user_signup(Json(payload): Json<SignupPayload>) -> impl IntoRespons
 
 pub async fn user_login(Json(payload): Json<LoginPayload>) -> impl IntoResponse {
     let service = USERSERVICE.lock().await;
+
+    // 调用 user_query 并期望返回用户 ID 和用户名
     match service.user_query(payload.email, payload.password).await {
-            Ok(_) => (
-                StatusCode::OK,
-                Json(json!({"message": "User logged in successfully"})),
-            ),
-            Err(e) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"error": e})),
-            ),
-        }
+        Ok(Some((uid, username))) => (
+            StatusCode::OK,
+            Json(json!({
+                "message": "User logged in successfully",
+                "uid": uid,
+                "username": username
+            })),
+        ),
+        Ok(None) => (
+            StatusCode::UNAUTHORIZED,
+            Json(json!({"error": "Invalid credentials"})),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": e})),
+        ),
+    }
 }
 
 // 修改后的 `user_logout`
@@ -102,7 +112,7 @@ pub async fn user_logout(Json(payload): Json<LogoutPayload>) -> impl IntoRespons
     }
 }
 
-pub async fn fetch_user_status(Query(params): Query<FetchOnlineStatusQuery>) -> impl IntoResponse {
+pub async fn fetch_user_status(Json(params): Json<FetchOnlineStatusQuery>) -> impl IntoResponse {
     let service = USERSERVICE.lock().await;
 
     // Fetch the list of users in the specified room

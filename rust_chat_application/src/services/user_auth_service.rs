@@ -16,13 +16,15 @@ impl UserAuthService {
         UserAuthService { repository }
     }
 
-    pub async fn user_check_exist(
-        &self,
-        email: String,
-    ) -> Result<(), String> {
-        self.repository
-                    .user_check_exist(email)
-                    .await
+    pub async fn user_check_exist(&self, email: String) -> Result<(), String> {
+        // Call the repository function that returns Result<Option<T>, String>
+        match self.repository.user_check_exist(email).await {
+            // If the user doesn't exist (Option is None)
+            Ok(()) => Ok(()),
+    
+            // If there's an error from the repository (Err case)
+            Err(e) => Err(e),
+        }
     }
 
     pub async fn user_sign_up(
@@ -41,7 +43,7 @@ impl UserAuthService {
         &self,
         email: String,
         password_hash: String,
-    ) -> Result<(), String> {
+    ) -> Result<Option<(i32, String)>, String> {
         self.repository.user_query(&email, &password_hash).await
     }
 

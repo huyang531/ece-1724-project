@@ -18,7 +18,7 @@ async fn main() {
      // initilize the connection
      //url format: mysql://username:password@localhost/database_name
      //remember you also need to modify it at repository layer
-     let database_url = "mysql://chat_user:password@localhost/chat_app";
+     let database_url = "mysql://root:lyy@localhost/chat_app";
      let pool = Pool::new(database_url);
  
      // initilize the database
@@ -32,8 +32,12 @@ async fn main() {
         .route("/api/chatrooms", post(create_chat_room))
         .route("/api/chatrooms/join", post(join_chat_room))
         .route("/api/chatrooms/leave", post(leave_chat_room))
-        .route("/api/auth/signup", post(user_signup));
+        .route("/api/auth/signup", post(user_signup))
         // .route(path, method_router)
+        .route("/api/user/signup", post(user_signup))
+        .route("/api/user/login", post(user_login))
+        .route("/api/user/logout", post(user_logout))
+        .route("/api/user/fetch_status", post(fetch_user_status));
 
         let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
         println!("Server running on http://{}", addr);
