@@ -3,6 +3,7 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 use crate::types::ChatRoom;
 use crate::Route;
+use crate::components::layout::Header;
 
 #[function_component]
 pub fn Home() -> Html {
@@ -20,6 +21,8 @@ pub fn Home() -> Html {
         .collect::<Vec<_>>();
 
     html! {
+    <>
+        <Header />
         <div class="home-container">
             <header class="home-header">
                 <h1>{"Welcome to RustChat"}</h1>
@@ -80,5 +83,6 @@ pub fn Home() -> Html {
                 }}
             </div>
         </div>
+    </>
     }
 }

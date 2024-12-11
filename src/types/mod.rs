@@ -1,4 +1,6 @@
 // src/types/mod.rs
+pub mod auth;
+
 #[derive(Clone, PartialEq, Debug)]
 pub struct User {
     pub id: String,

@@ -3,6 +3,7 @@ use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use crate::Route;
+use crate::components::layout::Header;
 
 #[function_component]
 pub fn SignUp() -> Html {
@@ -45,14 +46,16 @@ pub fn SignUp() -> Html {
     };
 
     html! {
-        <div class="signup-container">
-            <h2>{"Create Account"}</h2>
+    <>
+        <Header />
+        <div class="auth-container">
+            <h2 class="auth-title">{"Create Account"}</h2>
             {if let Some(err) = (*error).clone() {
                 html! { <div class="error">{err}</div> }
             } else {
                 html! {}
             }}
-            <form {onsubmit} class="signup-form">
+            <form {onsubmit} class="auth-form">
                 <div class="form-group">
                     <label for="username">{"Username"}</label>
                     <input 
@@ -109,7 +112,7 @@ pub fn SignUp() -> Html {
                         }}
                     />
                 </div>
-                <button type="submit" disabled={*loading}>
+                <button type="submit" class="auth-submit" disabled={*loading}>
                     {if *loading { "Creating Account..." } else { "Sign Up" }}
                 </button>
             </form>
@@ -117,5 +120,6 @@ pub fn SignUp() -> Html {
                 <Link<Route> to={Route::Login}>{"Already have an account? Login"}</Link<Route>>
             </div>
         </div>
+    </>
     }
 }
