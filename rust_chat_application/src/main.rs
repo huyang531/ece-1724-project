@@ -2,6 +2,7 @@ use axum::{
     routing::{get, post},
     Router
 };
+use tower_http::cors::{CorsLayer, Any};
 use std::net::SocketAddr;
 use mysql_async::Pool;
 use crate::database::initialize_database;
@@ -37,7 +38,13 @@ async fn main() {
         .route("/api/user/signup", post(user_signup))
         .route("/api/user/login", post(user_login))
         .route("/api/user/logout", post(user_logout))
-        .route("/api/user/fetch_status", post(fetch_user_status));
+        .route("/api/user/fetch_status", post(fetch_user_status))
+        .layer(
+            CorsLayer::new()
+                .allow_origin(Any)
+                .allow_methods(Any)
+                .allow_headers(Any),
+        );
 
         let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
         println!("Server running on http://{}", addr);
