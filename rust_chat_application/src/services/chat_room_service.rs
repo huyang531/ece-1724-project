@@ -10,11 +10,17 @@ impl ChatRoomService {
         ChatRoomService { repository }
     }
 
-    pub async fn create_chat_room(&self, room_name: String, created_by: i32) -> Result<(), String> {
+    pub async fn create_chat_room(&self, room_name: String, created_by: i32) -> Result<i32, String> {
         self.repository.create_chat_room(&room_name, created_by).await
     }
 
     pub async fn join_chat_room(&self, user_id: i32, chatroom_id: i32) -> Result<(), String> {
+        // First check if the room exists
+        if !self.repository.does_room_exist(chatroom_id).await? {
+            return Err("Chat room not found".to_string());
+        }
+        
+        // If room exists, proceed with joining
         self.repository.add_user_to_chat_room(user_id, chatroom_id).await
     }
 
