@@ -33,8 +33,6 @@ async fn main() {
         .route("/api/chatrooms", post(create_chat_room))
         .route("/api/chatrooms/join", post(join_chat_room))
         .route("/api/chatrooms/leave", post(leave_chat_room))
-        .route("/api/auth/signup", post(user_signup))
-        // .route(path, method_router)
         .route("/api/user/signup", post(user_signup))
         .route("/api/user/login", post(user_login))
         .route("/api/user/logout", post(user_logout))
