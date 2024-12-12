@@ -6,7 +6,8 @@ pub struct ChatRoomRepository {
 
 impl ChatRoomRepository {
     pub fn new() -> Self {
-        let database_url = "mysql://root:password@localhost/chat_app";
+        let database_url = "mysql://root:lyy@localhost/chat_app";
+        // let database_url = "mysql://root:password@localhost/chat_app";
         let pool = Pool::new(database_url);
         ChatRoomRepository { pool }
     }
