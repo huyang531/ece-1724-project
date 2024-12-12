@@ -13,24 +13,27 @@ use crate::services::auth;
 
 #[function_component]
 pub fn Home() -> Html {
-    let chat_rooms = use_state(Vec::<ChatRoom>::new);
     let auth_ctx = use_context::<Rc<AuthContext>>().expect("Could not find AuthContext");
     let is_logged_in = use_state(|| { auth_ctx.state.is_authenticated }); // auth check
-    let filter = use_state(String::new);
     let navigator = use_navigator().unwrap();
+    let navigator_clone = navigator.clone();
+        
+    // let chat_rooms = use_state(Vec::<ChatRoom>::new);
+    // let filter = use_state(String::new);
+    // let filtered_rooms = chat_rooms
+    // .iter()
+    // .filter(|room| {
+    //     room.name
+    //     .to_lowercase()
+    //     .contains(&filter.to_lowercase())
+    // })
+    // .collect::<Vec<_>>();
 
-    let filtered_rooms = chat_rooms
-        .iter()
-        .filter(|room| {
-            room.name
-                .to_lowercase()
-                .contains(&filter.to_lowercase())
-        })
-        .collect::<Vec<_>>();
+    let room_id = use_state(String::new);
 
     let on_logout = move |_: MouseEvent| {
         let auth_ctx_clone = auth_ctx.clone();
-        let navigator = navigator.clone();
+        let navigator = navigator_clone.clone();
         spawn_local(async move {
             let auth_ctx = auth_ctx_clone.clone();
             let navigator = navigator.clone();
@@ -77,40 +80,41 @@ pub fn Home() -> Html {
                     }
                 }}
             </header>
-
-            <div class="search-container">
-                <input 
-                    type="text"
-                    placeholder="Search rooms..."
-                    value={(*filter).clone()}
-                    onchange={let filter = filter.clone(); move |e: Event| {
-                        let target = e.target().unwrap();
-                        let input = target.dyn_into::<web_sys::HtmlInputElement>().unwrap();
-                        filter.set(input.value());
-                    }}
-                />
-            </div>
-
-            <div class="rooms-grid">
-                {if filtered_rooms.is_empty() {
-                    html! {
-                        <div class="no-rooms">
-                            {"No chat rooms available"}
+            {if *is_logged_in {
+                html! {
+                <div class="auth-container">
+                    <h2 class="auth-title">{"Join a Chat Room"}</h2>
+                    <form class="auth-form">
+                        <div class="form-group">
+                            <label for="chatroom_id">{"Chat Room ID"}</label>
+                            <input 
+                                type="text"
+                                placeholder="Enter Chat Room ID..."
+                                value={(*room_id).clone()}
+                                onchange={let room_id = room_id.clone(); move |e: Event| {
+                                    let target = e.target().unwrap();
+                                    let input = target.dyn_into::<web_sys::HtmlInputElement>().unwrap();
+                                    room_id.set(input.value());
+                                }}
+                            />
+                            <button class="auth-submit" onclick={let navigator = navigator.clone(); let room_id = room_id.clone(); move |_| {
+                                let id = (*room_id).clone();
+                                // Navigate to the chatroom with the given ID
+                                navigator.push(&Route::ChatRoom { id });
+                            }}>
+                                {"Join"}
+                            </button>
                         </div>
-                    }
-                } else {
-                    filtered_rooms.iter().map(|room| {
-                        html! {
-                            <Link<Route> to={Route::ChatRoom { id: room.id.clone() }} classes="room-card">
-                                <h3>{&room.name}</h3>
-                                <p class="user-count">
-                                    {format!("{} users online", room.users.len())}
-                                </p>
-                            </Link<Route>>
-                        }
-                    }).collect::<Html>()
-                }}
-            </div>
+                    </form>
+                </div>
+                }
+            } else {
+                html! {
+                    <div class="no-rooms">
+                        {"Please log in to join a chat room!"}
+                    </div>
+                }
+            }}
         </div>
     </>
     }
