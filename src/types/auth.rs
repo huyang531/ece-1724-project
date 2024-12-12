@@ -8,9 +8,9 @@ pub struct LoginRequest {
 
 #[derive(Deserialize)]
 pub struct LoginResponse {
-    pub token: String,
-    pub user_id: i32,
-    pub status: String,
+    pub message: String,
+    pub uid: i32,
+    pub username: String,
 }
 
 #[derive(Serialize)]

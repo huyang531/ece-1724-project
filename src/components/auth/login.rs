@@ -1,8 +1,11 @@
+use core::error;
+
 use yew::platform::spawn_local;
 // src/components/auth/login.rs
 use yew::prelude::*;
 use yew_router::{navigator, prelude::*};
 use web_sys::HtmlInputElement;
+use web_sys::window;
 use wasm_bindgen::JsCast;
 use crate::Route;
 use crate::components::layout::Header;
@@ -13,40 +16,45 @@ pub fn Login() -> Html {
     let email = use_state(|| String::new());
     let password = use_state(|| String::new());
     let navigator = use_navigator().unwrap();
+    let error = use_state(|| Option::<String>::None);
 
     let onsubmit = {
         let email = email.clone();
         let password = password.clone();
-        // let error = error.clone();
         let navigator = navigator.clone();
+        // let error = error.clone();
 
         
         Callback::from(move |e: SubmitEvent| {
             e.prevent_default();
-            // TODO: Implement login logic
             let email = (*email).clone();
             let password = (*password).clone();
             let navigator = navigator.clone();
+            // let error = error.clone();
 
             spawn_local(async move {
                 match auth::login(email, password).await {
                     Ok(response) => {
-                        if response.status == "Success" {
-                            // Store token
-                            log::info!("Login successful");
-                        } else {
-                            log::error!("Login failed: {}", response.status);
-                        }
+                        // TODO do something with UID
+                        log::info!("Login successful");
                         navigator.push(&Route::Home);
                     }
                     Err(err) => {
                         log::error!("Login error: {:?}", err);
+                        // Show a popup that displays the error message
+                        // error.set(Some(err));
+                        window().unwrap().alert_with_message(&err).unwrap();
                     }
                 }
             });
-            // log::info!("Login attempt: {}", *email);
         })
     };
+
+    //  // Error handler
+    //  let on_close_error = {
+    //     let error = error.clone();
+    //     Callback::from(move |_| error.set(None))
+    // };
 
 html! {
 <>
@@ -93,6 +101,14 @@ html! {
         <div class="auth-links">
             <Link<Route> to={Route::SignUp}>{"Don't have an account? Sign up"}</Link<Route>>
         </div>
+        // if let Some(error_message) = (*error).clone() {
+        //         <div class="error-popup">
+        //             <div class="error-content">
+        //                 <p>{error_message}</p>
+        //                 <button onclick={on_close_error}>{"Close"}</button>
+        //             </div>
+        //         </div>
+        // }
     </div>
 </>
 }
