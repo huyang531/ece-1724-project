@@ -1,10 +1,12 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
+use crate::context::auth::AuthProvider;
 
 mod components;
 mod services;
 mod types;
 mod config;
+mod context;
 
 #[derive(Clone, Routable, PartialEq)]
 enum Route {
@@ -21,9 +23,11 @@ enum Route {
 #[function_component]
 fn App() -> Html {
     html! {
-        <BrowserRouter>
-                <Switch<Route> render={switch} />
-        </BrowserRouter>
+        <AuthProvider>
+            <BrowserRouter>
+                    <Switch<Route> render={switch} />
+            </BrowserRouter>
+        </AuthProvider>
     }
 }
 

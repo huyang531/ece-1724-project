@@ -1,9 +1,11 @@
 use wasm_bindgen::JsCast;
-use web_sys::HtmlInputElement;
+use web_sys::{window, HtmlInputElement};
 use yew::prelude::*;
-use yew_router::prelude::*;
+use yew_router::{navigator, prelude::*};
+use yew::platform::spawn_local;
 use crate::Route;
 use crate::components::layout::Header;
+use crate::services::auth;
 
 #[function_component]
 pub fn SignUp() -> Html {
@@ -25,7 +27,13 @@ pub fn SignUp() -> Html {
 
         Callback::from(move |e: SubmitEvent| {
             e.prevent_default();
-            
+            let username = (*username).clone();
+            let email = (*email).clone();
+            let password = (*password).clone();
+            let navigator = navigator.clone();
+            let error = error.clone();
+            let loading = loading.clone();
+
             // Basic validation
             if password.as_str() != confirm_password.as_str() {
                 error.set(Some("Passwords do not match".to_string()));
@@ -39,10 +47,28 @@ pub fn SignUp() -> Html {
 
             loading.set(true);
             
-            // TODO: Implement actual signup logic here
-            // For now, just redirect to login
-            navigator.push(&Route::Login);
+            spawn_local(async move {
+                match auth::signup(username, email, password).await {
+                    Ok(_response) => {
+                        log::info!("Signup successful");
+                        window().unwrap().alert_with_message("Signup successful").unwrap();
+                        // For now, just redirect to login
+                        navigator.push(&Route::Login);
+                    }
+                    Err(err) => {
+                        log::error!("Signup error: {:?}", err);
+                        loading.set(false);
+                        error.set(Some(err));
+                    }
+                }
+            });
         })
+    };
+
+     // Error handler
+     let on_close_error = {
+        let error = error.clone();
+        Callback::from(move |_| error.set(None))
     };
 
     html! {
@@ -119,6 +145,14 @@ pub fn SignUp() -> Html {
             <div class="auth-links">
                 <Link<Route> to={Route::Login}>{"Already have an account? Login"}</Link<Route>>
             </div>
+            if let Some(error_message) = (*error).clone() {
+                        <div class="error-popup">
+                            <div class="error-content">
+                                <p>{error_message}</p>
+                                <button onclick={on_close_error}>{"Close"}</button>
+                            </div>
+                        </div>
+            }
         </div>
     </>
     }

@@ -1,15 +1,23 @@
+use std::rc::Rc;
+
 use wasm_bindgen::JsCast;
+use web_sys::window;
+use yew::platform::spawn_local;
 use yew::prelude::*;
-use yew_router::prelude::*;
+use yew_router::{navigator, prelude::*};
 use crate::types::ChatRoom;
 use crate::Route;
 use crate::components::layout::Header;
+use crate::context::auth::AuthContext;
+use crate::services::auth;
 
 #[function_component]
 pub fn Home() -> Html {
     let chat_rooms = use_state(Vec::<ChatRoom>::new);
-    let is_logged_in = use_state(|| false); // TODO: Implement actual auth check
+    let auth_ctx = use_context::<Rc<AuthContext>>().expect("Could not find AuthContext");
+    let is_logged_in = use_state(|| { auth_ctx.state.is_authenticated }); // auth check
     let filter = use_state(String::new);
+    let navigator = use_navigator().unwrap();
 
     let filtered_rooms = chat_rooms
         .iter()
@@ -20,6 +28,27 @@ pub fn Home() -> Html {
         })
         .collect::<Vec<_>>();
 
+    let on_logout = move |_: MouseEvent| {
+        let auth_ctx_clone = auth_ctx.clone();
+        let navigator = navigator.clone();
+        spawn_local(async move {
+            let auth_ctx = auth_ctx_clone.clone();
+            let navigator = navigator.clone();
+            match auth::logout(auth_ctx.state.user_id.clone().unwrap_or_else(|| "User is not logged in!".to_string())).await {
+                Ok(_) => {
+                    log::info!("Logout successful");
+                    auth_ctx_clone.logout.emit(());
+                    window().unwrap().alert_with_message("Logout successful").unwrap();
+                    navigator.push(&Route::Login);
+                }
+                Err(err) => {
+                    log::error!("Logout error: {:?}", err);
+                    window().unwrap().alert_with_message(&err).unwrap();
+                }
+            }
+        });
+    };
+
     html! {
     <>
         <Header />
@@ -29,10 +58,10 @@ pub fn Home() -> Html {
                 {if *is_logged_in {
                     html! {
                         <div class="user-controls">
-                            <button class="create-room-btn">{"Create New Room"}</button>
-                            <Link<Route> to={Route::Login} classes="logout-btn">
+                            <button class="btn-primary">{"Create New Room"}</button>
+                            <button class="btn-secondary" onclick={on_logout}>
                                 {"Logout"}
-                            </Link<Route>>
+                            </button>
                         </div>
                     }
                 } else {

@@ -22,7 +22,5 @@ pub struct SignupRequest {
 
 #[derive(Deserialize)]
 pub struct SignupResponse {
-    pub user_id: i32,
-    pub username: String,
-    pub status: String,
+    pub message: String,
 }

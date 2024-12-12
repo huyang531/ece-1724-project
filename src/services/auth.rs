@@ -1,11 +1,11 @@
-use wasm_bindgen::{JsCast, JsValue};
+use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Request, RequestInit, RequestMode, Response};
 use crate::{config, types::auth::*};
 use serde_wasm_bindgen::from_value;
 
 pub async fn login(email: String, password: String) -> Result<LoginResponse, String> {
-    let mut opts = RequestInit::new();
+    let opts = RequestInit::new();
     opts.set_method("POST");
     opts.set_mode(RequestMode::Cors);
     
@@ -19,8 +19,8 @@ pub async fn login(email: String, password: String) -> Result<LoginResponse, Str
     let window = web_sys::window().unwrap();
     let resp_value = JsFuture::from(window.fetch_with_request(&request))
         .await
-        .map_err(|err| err.as_string().unwrap())?;
-    
+        .map_err(|err| err.as_string().unwrap_or_else(|| "Request failed. Is server started?".to_string()))?;
+
     let resp: Response = resp_value.dyn_into().unwrap();
 
     match resp.status() {
@@ -35,7 +35,7 @@ pub async fn login(email: String, password: String) -> Result<LoginResponse, Str
 
     let json = JsFuture::from(resp.json().unwrap())
         .await
-        .map_err(|err| err.as_string().unwrap())?;
+        .map_err(|err| err.as_string().unwrap_or_else(|| "Error decoding json".to_string()))?;
     match from_value::<LoginResponse>(json.clone()) {
         Ok(response) => Ok(response),
         Err(err) => {
@@ -46,7 +46,7 @@ pub async fn login(email: String, password: String) -> Result<LoginResponse, Str
 }
 
 pub async fn signup(username: String, email: String, password: String) -> Result<SignupResponse, String> {
-    let mut opts = RequestInit::new();
+    let opts = RequestInit::new();
     opts.set_method("POST");
     opts.set_mode(RequestMode::Cors);
     
@@ -60,13 +60,59 @@ pub async fn signup(username: String, email: String, password: String) -> Result
     let window = web_sys::window().unwrap();
     let resp_value = JsFuture::from(window.fetch_with_request(&request))
         .await
-        .map_err(|err| err.as_string().unwrap())?;
+        .map_err(|err| err.as_string().unwrap_or_else(|| "Request failed. Is server started?".to_string()))?;
     
     let resp: Response = resp_value.dyn_into().unwrap();
+
+    match resp.status() {
+        400 => {
+            return Err("User already exists".to_string());
+        }
+        500 => {
+            return Err("Internal server error".to_string());
+        }
+        _ => {}
+    }
+
     let json = JsFuture::from(resp.json().unwrap())
         .await
-        .map_err(|err| err.as_string().unwrap())?;
+        .map_err(|err| err.as_string().unwrap_or_else(|| "Error decoding json".to_string()))?;
     
-    let response: SignupResponse = from_value(json).unwrap();
-    Ok(response)
+    match from_value::<SignupResponse>(json.clone()) {
+        Ok(response) => Ok(response),
+        Err(err) => {
+            log::error!("Failed to parse signup response: {:?}", err);
+            return Err(err.to_string());
+        }
+    }
+}
+
+pub async fn logout(user_id: String) -> Result<(), String> {
+    let opts = RequestInit::new();
+    opts.set_method("POST");
+    opts.set_mode(RequestMode::Cors);
+    opts.set_body(JsValue::from_str(format!("{{\"user_id\": {}}}", user_id).as_str()).as_ref());
+
+    let url = format!("{}{}", config::API_BASE_URL, config::Endpoints::LOGOUT);
+    let request = Request::new_with_str_and_init(&url, &opts).unwrap();
+    request.headers().set("Content-Type", "application/json").unwrap();
+
+    let window = web_sys::window().unwrap();
+    let resp_value = JsFuture::from(window.fetch_with_request(&request))
+        .await
+        .map_err(|err| err.as_string().unwrap_or_else(|| "Request failed. Is server started?".to_string()))?;
+
+    let resp: Response = resp_value.dyn_into().unwrap();
+
+    match resp.status() {
+        401 => {
+            return Err("Unauthorized".to_string());
+        }
+        500 => {
+            return Err("Internal server error".to_string());
+        }
+        _ => {}
+    }
+
+    Ok(())
 }

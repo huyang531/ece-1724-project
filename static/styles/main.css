@@ -148,10 +148,19 @@ input, button, textarea {
     grid-column: 1 / -1;
 }
 
+.btn-primary:hover {
+    text-decoration: underline;
+}
+
+.btn-secondary:hover {
+    text-decoration: underline;
+}
+
 .btn-primary, .btn-secondary {
     padding: 0.5rem 1rem;
     border-radius: 4px;
     text-decoration: none;
+    cursor: pointer;
 }
 
 .btn-primary {
