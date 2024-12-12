@@ -6,7 +6,7 @@ pub struct ChatRoomRepository {
 
 impl ChatRoomRepository {
     pub fn new() -> Self {
-        let database_url = "mysql://root:password@localhost/chat_app";
+        let database_url = "mysql://root:lyy@localhost/chat_app";
         let pool = Pool::new(database_url);
         ChatRoomRepository { pool }
     }
@@ -22,8 +22,6 @@ impl ChatRoomRepository {
         )
         .await
         .map_err(|e| e.to_string())?;
-        
-        // Get the last inserted ID
         // Then query the newly created room using room_name and created_by
         let room_id: Option<i32> = conn
             .exec_first(
@@ -46,7 +44,7 @@ impl ChatRoomRepository {
         
         let exists: Option<i32> = conn
             .exec_first(
-                "SELECT 1 FROM ChatRooms WHERE id = :chatroom_id",
+                "SELECT 1 FROM ChatRooms WHERE chatroom_id = :chatroom_id",
                 params! {
                     "chatroom_id" => chatroom_id,
                 },
