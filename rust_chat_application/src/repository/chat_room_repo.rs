@@ -24,13 +24,22 @@ impl ChatRoomRepository {
         .map_err(|e| e.to_string())?;
         
         // Get the last inserted ID
-        let room_id: i32 = conn
-            .query_first("SELECT LAST_INSERT_ID()")
+        // Then query the newly created room using room_name and created_by
+        let room_id: Option<i32> = conn
+            .exec_first(
+                r"SELECT id FROM ChatRooms 
+                  WHERE room_name = :room_name 
+                  AND created_by = :created_by 
+                  ORDER BY id DESC LIMIT 1",
+                params! {
+                    "room_name" => room_name,
+                    "created_by" => created_by,
+                },
+            )
             .await
-            .map_err(|e| e.to_string())?
-            .ok_or_else(|| "Failed to get room ID".to_string())?;
+            .map_err(|e| e.to_string())?;
             
-        Ok(room_id)
+        room_id.ok_or_else(|| "Failed to get room ID".to_string())
     }
     pub async fn does_room_exist(&self, chatroom_id: i32) -> Result<bool, String> {
         let mut conn = self.pool.get_conn().await.map_err(|e| e.to_string())?;
