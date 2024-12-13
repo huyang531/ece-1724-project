@@ -1,11 +1,11 @@
 curl --json '{"username": "World", "email": "lll@gmail.com","password":"11111"}' "http://127.0.0.1:3000/api/user/signup"
 
-curl --json '{"user_id": 1,"room_name":"r1"}' "http://127.0.0.1:3000/api/chatrooms"
-
 curl --json '{"email": "lll@gmail.com","password":"11111"}' "http://127.0.0.1:3000/api/user/login"
 
-curl --json '{"user_id":1}' "http://127.0.0.1:3000/api/user/logout"
+curl --json '{"user_id": 1,"room_name":"r1"}' "http://127.0.0.1:3000/api/chatrooms"
 
 curl --json '{"room_id":1,"user_id": 1}' "http://127.0.0.1:3000/api/chatrooms/join"
+
+curl --json '{"user_id":1}' "http://127.0.0.1:3000/api/user/logout"
 
 curl --json '{"room_id":1}' "http://127.0.0.1:3000/api/user/fetch_status"
