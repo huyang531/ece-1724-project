@@ -24,7 +24,7 @@ pub fn Login() -> Html {
         let password = password.clone();
         let navigator = navigator.clone();
         let error = error.clone();
-        let storage = window().unwrap().local_storage().unwrap().unwrap();
+        let storage = window().unwrap().session_storage().unwrap().unwrap();
         
         Callback::from(move |e: SubmitEvent| {
             e.prevent_default();

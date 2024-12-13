@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use yew::prelude::*;
 use yew_router::prelude::*;
 use crate::Route;
@@ -19,14 +21,17 @@ pub fn Header() -> Html {
     //     })
     // };
 
+    let auth_ctx = use_context::<Rc<crate::context::auth::AuthContext>>().expect("Could not find AuthContext");
     html! {
         <header class="app-header">
             <Link<Route> to={Route::Home} classes="logo">
                 {"RustChat"}
             </Link<Route>>
-            // <button onclick={toggle_theme} class="theme-toggle">
-            //     {if *theme == "light" { "🌙" } else { "☀️" }}
-            // </button>
+            <h4>{
+                match auth_ctx.state.user_id {
+                    Some(user_id) => html! { format!("User ID: {:?}", user_id) },
+                    None => html! {}
+                }}</h4>
         </header>
     }
 }

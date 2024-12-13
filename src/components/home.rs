@@ -1,11 +1,10 @@
 use std::rc::Rc;
 
 use wasm_bindgen::JsCast;
-use web_sys::{window, Storage};
+use web_sys::window;
 use yew::platform::spawn_local;
 use yew::prelude::*;
-use yew_router::{navigator, prelude::*};
-use crate::types::ChatRoom;
+use yew_router::prelude::*;
 use crate::services::chat_room;
 use crate::Route;
 use crate::components::layout::Header;
@@ -14,7 +13,7 @@ use crate::services::auth;
 
 fn load_auth_token() -> Option<String> {
     let window = window().unwrap();
-    let storage = window.local_storage().unwrap().unwrap();
+    let storage = window.session_storage().unwrap().unwrap();
  
     storage.get_item("user_id").unwrap()
 }
@@ -41,6 +40,33 @@ pub fn Home() -> Html {
             is_logged_in.set(value.clone());
         });
     }
+
+    // // Improvement: Call logout API when the session terminates
+    // {
+    //     let auth_ctx = auth_ctx.clone();
+    //     use_effect(move || {
+    //         let window = window().unwrap();
+    //         let storage = window.session_storage().unwrap().unwrap();
+    //         let user_id = auth_ctx.state.user_id.clone();
+
+    //         // Cleanup function to call logout API
+    //         move || {
+    //             if let Some(user_id) = user_id {
+    //                 spawn_local(async move {
+    //                     match auth::logout(user_id).await {
+    //                         Ok(_) => {
+    //                             log::info!("Logout successful");
+    //                             storage.remove_item("user_id").unwrap();
+    //                         }
+    //                         Err(err) => {
+    //                             log::error!("Logout error: {:?}", err);
+    //                         }
+    //                     }
+    //                 });
+    //             }
+    //         }
+    //     });
+    // }
 
     let navigator = use_navigator().unwrap();
     let navigator_clone = navigator.clone();
@@ -122,7 +148,7 @@ pub fn Home() -> Html {
         let auth_ctx_clone = auth_ctx_clone.clone();
         let navigator = navigator_clone.clone();
         let error = error_clone.clone();
-        let storage = window().unwrap().local_storage().unwrap().unwrap();
+        let storage = window().unwrap().session_storage().unwrap().unwrap();
         
         spawn_local(async move {
             let auth_ctx = auth_ctx_clone.clone();
