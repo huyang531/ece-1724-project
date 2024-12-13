@@ -25,10 +25,10 @@ impl ChatRoomRepository {
         // Then query the newly created room using room_name and created_by
         let room_id: Option<i32> = conn
             .exec_first(
-                r"SELECT id FROM ChatRooms 
+                r"SELECT chatroom_id FROM ChatRooms 
                   WHERE room_name = :room_name 
                   AND created_by = :created_by 
-                  ORDER BY id DESC LIMIT 1",
+                  ORDER BY chatroom_id DESC LIMIT 1",
                 params! {
                     "room_name" => room_name,
                     "created_by" => created_by,
