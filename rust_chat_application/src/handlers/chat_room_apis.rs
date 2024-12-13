@@ -39,7 +39,10 @@ pub async fn join_chat_room(
 ) -> impl IntoResponse {
     let service = ChatRoomService::new();
     match service.join_chat_room(payload.user_id, payload.room_id).await {
-        Ok(_) => (StatusCode::OK, Json(json!({"message": "Joined chat room"}))),
+        Ok(room_name) => (StatusCode::OK, Json(json!({
+            "message": "Joined chat room",
+            "room_name": room_name
+        }))),
         Err(e) => match e.as_str() {
             "Chat room not found" => (StatusCode::NOT_FOUND, Json(json!({"error": e}))),
             _ => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": e}))),

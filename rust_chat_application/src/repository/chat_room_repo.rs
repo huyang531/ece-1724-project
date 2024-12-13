@@ -39,6 +39,21 @@ impl ChatRoomRepository {
             
         room_id.ok_or_else(|| "Failed to get room ID".to_string())
     }
+    pub async fn get_room_name(&self, chatroom_id: i32) -> Result<String, String> {
+        let mut conn = self.pool.get_conn().await.map_err(|e| e.to_string())?;
+        
+        let room_name: Option<String> = conn
+            .exec_first(
+                "SELECT room_name FROM ChatRooms WHERE chatroom_id = :chatroom_id",
+                params! {
+                    "chatroom_id" => chatroom_id,
+                },
+            )
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        room_name.ok_or_else(|| "Room not found".to_string())
+    }
     pub async fn does_room_exist(&self, chatroom_id: i32) -> Result<bool, String> {
         let mut conn = self.pool.get_conn().await.map_err(|e| e.to_string())?;
         
