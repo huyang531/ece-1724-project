@@ -9,3 +9,23 @@ curl --json '{"user_id":1}' "http://127.0.0.1:3000/api/user/logout"
 curl --json '{"room_id":1,"user_id": 1}' "http://127.0.0.1:3000/api/chatrooms/join"
 
 curl --json '{"room_id":1}' "http://127.0.0.1:3000/api/user/fetch_status"
+
+
+windows test:
+#Signup
+curl -H "Content-Type: application/json" -d "{\"username\":\"World\",\"email\":\"lll@gmail.com\",\"password\":\"11111\"}" http://127.0.0.1:3000/api/user/signup
+
+# Create chat room
+curl -H "Content-Type: application/json" -d "{\"user_id\":1,\"room_name\":\"r1\"}" http://127.0.0.1:3000/api/chatrooms
+
+# Login
+curl -H "Content-Type: application/json" -d "{\"email\":\"lll@gmail.com\",\"password\":\"11111\"}" http://127.0.0.1:3000/api/user/login
+
+# Logout
+curl -H "Content-Type: application/json" -d "{\"user_id\":1}" http://127.0.0.1:3000/api/user/logout
+
+# Join chat room
+curl -H "Content-Type: application/json" -d "{\"room_id\":1,\"user_id\":1}" http://127.0.0.1:3000/api/chatrooms/join
+
+# Fetch status
+curl -H "Content-Type: application/json" -d "{\"room_id\":1}" http://127.0.0.1:3000/api/user/fetch_status
