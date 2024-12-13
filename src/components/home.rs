@@ -41,7 +41,6 @@ pub fn Home() -> Html {
             is_logged_in.set(value.clone());
         });
     }
-    let _user_id = use_state(|| { auth_ctx.state.user_id.clone() });
 
     let navigator = use_navigator().unwrap();
     let navigator_clone = navigator.clone();
@@ -50,6 +49,7 @@ pub fn Home() -> Html {
     let error_clone = error.clone();
 
     let room_id = use_state(|| 0);
+    let room_id_clone = room_id.clone();
     let room_name = use_state(String::new);
     let room_name_clone = room_name.clone();
         
@@ -60,13 +60,41 @@ pub fn Home() -> Html {
     };
     let error_clone = error.clone();
     
-    
+    let on_join_chat_room = move |_: MouseEvent| {
+        let navigator = navigator_clone.clone();
+        let room_id = room_id_clone.clone();
+        let user_id = auth_ctx_clone.state.user_id.clone().expect("User is not logged in!");
+        let error = error_clone.clone();
+        spawn_local(async move {
+            let room_id = (*room_id).clone();
+            let navigator = navigator.clone();
+            let error = error.clone();
+            match chat_room::join_chat_room(user_id, room_id).await {
+                Ok(_) => {
+                    log::info!("Joined chat room");
+                    navigator.push(&Route::ChatRoom { id: room_id });
+                }
+                Err(err) => {
+                    log::error!("Failed to join chat room: {:?}", err);
+                    error.set(Some(err));
+                }
+            }
+        });
+    };
+    let error_clone = error.clone();
+    let navigator_clone = navigator.clone();
+    let auth_ctx_clone = auth_ctx.clone();
     
     let on_create_chat_room = move |_: MouseEvent| {
         let auth_ctx = auth_ctx_clone.clone();
         let navigator = navigator_clone.clone();
         let room_name = room_name_clone.clone();
         let error = error_clone.clone();
+
+        if room_name.is_empty() {
+            error.set(Some("Room name cannot be empty".to_string()));
+            return;
+        }
 
         spawn_local(async move {
             // let auth_ctx = auth_ctx_clone.clone();
@@ -76,12 +104,11 @@ pub fn Home() -> Html {
                 Ok(response) => {
                     log::info!("Chat room created: {:?}", response.room_id);
                     window().unwrap().alert_with_message(format!("Chat room created successfully. Room ID: {:?}", response.room_id).as_str()).unwrap();
-                    // navigator.push(&Route::ChatRoom { id: response.room_id });
+                    navigator.push(&Route::ChatRoom { id: response.room_id });
                 }
                 Err(err) => {
                     log::error!("Failed to create chat room: {:?}", err);
                     error.set(Some(err));
-                    // window().unwrap().alert_with_message(&err).unwrap();
                 }
             }
         });
@@ -150,57 +177,48 @@ pub fn Home() -> Html {
                 <div class="chat-row">
                     <div class="chat-container">
                         <h2 class="chat-title">{"Create a Chat Room"}</h2>
-                        <form class="chat-form">
-                            <div class="form-group">
-                                <label for="chatroom_name">{"Chat Room Name"}</label>
-                                <input 
-                                    type="text"
-                                    placeholder="Enter Chat Room Name..."
-                                    onchange={let room_name = room_name.clone(); move |e: Event| {
-                                        let target = e.target().unwrap();
-                                        let input = target.dyn_into::<web_sys::HtmlInputElement>().unwrap();
-                                        room_name.set(input.value());
-                                    }}
-                                />
-                            </div>
+                        <div class="form-group">
+                            <label for="chatroom_name">{"Chat Room Name"}</label>
+                            <input 
+                                type="text"
+                                placeholder="Enter Chat Room Name..."
+                                onchange={let room_name = room_name.clone(); move |e: Event| {
+                                    let target = e.target().unwrap();
+                                    let input = target.dyn_into::<web_sys::HtmlInputElement>().unwrap();
+                                    room_name.set(input.value());
+                                }}
+                            />
                             <button class="chat-submit" onclick={on_create_chat_room}>
                                 {"Create"}
                             </button>
-                        </form>
+                        </div>
                     </div>
 
                     <div class="chat-container">
                         <h2 class="chat-title">{"Join a Chat Room"}</h2>
-                        <form class="chat-form">
-                            <div class="form-group">
-                                <label for="chatroom_id">{"Chat Room ID"}</label>
-                                <input 
-                                    type="text"
-                                    placeholder="Enter Chat Room ID..."
-                                    // value={(*room_id).clone()}
-                                    onchange={let room_id = room_id.clone(); let error = error_clone.clone(); move |e: Event| {
-                                        let target = e.target().unwrap();
-                                        let input = target.dyn_into::<web_sys::HtmlInputElement>().unwrap();
-                                        let id = match input.value().parse::<i32>() {
-                                            Ok(id) => id,
-                                            Err(_) => {
-                                                error.set(Some("Invalid room ID".to_string()));
-                                                return;
-                                            }
-                                        };
-                                        room_id.set(id);
-                                    }}
-                                />
-                            </div>
-                            <button class="chat-submit" onclick={let navigator = navigator.clone(); let room_id = room_id.clone(); move |_| {
-                                let id = (*room_id).clone();
-                                // Navigate to the chatroom with the given ID
-                                // TODO: Call join_chat_room() API?
-                                navigator.push(&Route::ChatRoom { id });
-                            }}>
+                        <div class="form-group">
+                            <label>{"Chat Room ID"}</label>
+                            <input 
+                                type="number"
+                                min="1"
+                                placeholder="Enter Chat Room ID..."
+                                onchange={let room_id = room_id.clone(); let error = error_clone.clone(); move |e: Event| {
+                                    let target = e.target().unwrap();
+                                    let input = target.dyn_into::<web_sys::HtmlInputElement>().unwrap();
+                                    let id = match input.value().parse::<i32>() {
+                                        Ok(id) => id,
+                                        Err(_) => {
+                                            error.set(Some("Invalid room ID".to_string()));
+                                            return;
+                                        }
+                                    };
+                                    room_id.set(id);
+                                }}
+                            />
+                            <button class="chat-submit" onclick={on_join_chat_room}>
                                 {"Join"}
                             </button>
-                        </form>
+                        </div>
                     </div>
                 </div>
                 }

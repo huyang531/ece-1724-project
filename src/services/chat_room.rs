@@ -5,6 +5,8 @@ use crate::{config, types::chat_room::*};
 use serde_wasm_bindgen::from_value;
 
 pub async fn create_chat_room(user_id: i32, room_name: String) -> Result<CreateChatRoomResponse, String> {
+    log::debug!("Creating chat room with name: {}", room_name);
+
     let opts = RequestInit::new();
     opts.set_method("POST");
     opts.set_mode(RequestMode::Cors);
@@ -22,24 +24,31 @@ pub async fn create_chat_room(user_id: i32, room_name: String) -> Result<CreateC
         .map_err(|err| err.as_string().unwrap_or_else(|| "Request failed. Is server started?".to_string()))?;
     let resp = resp_value.dyn_into::<Response>().unwrap();
 
-    match resp.status() {
-        401 => {
-            return Err("Unauthorized".to_string());
-        }
-        500 => {
-            return Err("Internal server error. Please try logging in again!".to_string());
-        }
-        _ => {}
-    }
+    // match resp.status() {
+    //     401 => {
+    //         return Err("Unauthorized".to_string());
+    //     }
+    //     500 => {
+    //         return Err("Internal server error. Please try logging in again!".to_string());
+    //     }
+    //     _ => {}
+    // }
 
     let json = JsFuture::from(resp.json().unwrap())
         .await
-        .map_err(|err| err.as_string().unwrap_or_else(|| "Error decoding json".to_string()))?;
+        .map_err(|err| err.as_string().unwrap_or_else(|| "Error decoding error".to_string()))?;
     match from_value::<CreateChatRoomResponse>(json.clone()) {
-        Ok(response) => Ok(response),
+        Ok(response) => {
+            log::info!("Chat room created successfully: {:?}", response.room_id);
+            Ok(response)
+        },
         Err(err) => {
             log::error!("Failed to parse create chat room response: {:?}", err);
-            return Err(err.to_string());
+            let json_content = format!("Response was: {:?}", json);
+            match json_content {
+                json_content if json_content.contains("Duplicate")  => Err("Chat Room name already exists".to_string()),
+                _ => Err(json_content),
+            }
         }
     }
 }
