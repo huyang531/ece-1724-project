@@ -24,7 +24,7 @@ pub fn Login() -> Html {
         let password = password.clone();
         let navigator = navigator.clone();
         let error = error.clone();
-
+        let storage = window().unwrap().local_storage().unwrap().unwrap();
         
         Callback::from(move |e: SubmitEvent| {
             e.prevent_default();
@@ -33,13 +33,15 @@ pub fn Login() -> Html {
             let navigator = navigator.clone();
             let error = error.clone();
             let auth_ctx = auth_ctx.clone();
+            let storage = storage.clone();
 
             spawn_local(async move {
                 match auth::login(email, password).await {
                     Ok(response) => {
-                        auth_ctx.login.emit(response.uid.to_string());
+                        auth_ctx.login.emit(response.uid);
                         log::info!("Login successful");
                         window().unwrap().alert_with_message("Login successful").unwrap();
+                        storage.set_item("user_id", &response.uid.to_string()).unwrap(); 
                         navigator.push(&Route::Home);
                     }
                     Err(err) => {

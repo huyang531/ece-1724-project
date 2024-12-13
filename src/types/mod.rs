@@ -1,5 +1,6 @@
 // src/types/mod.rs
 pub mod auth;
+pub mod chat_room;
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct User {

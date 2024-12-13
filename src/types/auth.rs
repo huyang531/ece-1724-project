@@ -24,3 +24,8 @@ pub struct SignupRequest {
 pub struct SignupResponse {
     pub message: String,
 }
+
+#[derive(Serialize)]
+pub struct LogoutRequest {
+    pub user_id: i32,
+}

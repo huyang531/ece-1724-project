@@ -25,9 +25,13 @@ body {
     font-family: var(--font-primary);
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1, h2 {
     font-family: var(--font-primary);
     font-weight: 600;
+}
+
+h3, h4, h5, h6 {
+    font-family: var(--font-primary);
 }
 
 input, button, textarea {
@@ -104,6 +108,33 @@ input, button, textarea {
     gap: 1rem;
 }
 
+
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    color: #555;
+    font-size: 0.9rem;
+}
+
+.form-group input {
+    padding: 0.8rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
 .search-container {
     margin-bottom: 2rem;
 }
@@ -149,11 +180,13 @@ input, button, textarea {
 }
 
 .btn-primary:hover {
-    text-decoration: underline;
+    /* text-decoration: underline; */
+    background: #0056b3;
 }
 
 .btn-secondary:hover {
-    text-decoration: underline;
+    /* text-decoration: underline; */
+     background: rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary, .btn-secondary {

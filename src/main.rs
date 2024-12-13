@@ -17,7 +17,7 @@ enum Route {
     #[at("/signup")]
     SignUp,
     #[at("/chat/:id")]
-    ChatRoom { id: String },
+    ChatRoom { id: i32 },
 }
 
 #[function_component]
@@ -36,7 +36,7 @@ fn switch(routes: Route) -> Html {
         Route::Home => html! { <components::Home /> },
         Route::Login => html! { <components::auth::Login /> },
         Route::SignUp => html! { <components::auth::SignUp /> },
-        Route::ChatRoom { id } => html! { <components::chat::ChatRoom id={id} /> },
+        Route::ChatRoom { id } => html! { <components::chat::ChatRoom id={id.to_string()} /> },
     }
 }
 

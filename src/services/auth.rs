@@ -1,4 +1,4 @@
-use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
+use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Request, RequestInit, RequestMode, Response};
 use crate::{config, types::auth::*};
@@ -87,11 +87,13 @@ pub async fn signup(username: String, email: String, password: String) -> Result
     }
 }
 
-pub async fn logout(user_id: String) -> Result<(), String> {
+pub async fn logout(user_id: i32) -> Result<(), String> {
+    let logout_request = LogoutRequest { user_id };
     let opts = RequestInit::new();
     opts.set_method("POST");
     opts.set_mode(RequestMode::Cors);
-    opts.set_body(JsValue::from_str(format!("{{\"user_id\": {}}}", user_id).as_str()).as_ref());
+    opts.set_body(Some(&JsValue::from_str(&serde_json::to_string(&logout_request).unwrap())).unwrap());
+    // opts.set_body(JsValue::from_str(format!("{{\"user_id\": {}}}", user_id).as_str()).as_ref());
 
     let url = format!("{}{}", config::API_BASE_URL, config::Endpoints::LOGOUT);
     let request = Request::new_with_str_and_init(&url, &opts).unwrap();
