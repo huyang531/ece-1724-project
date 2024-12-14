@@ -1,6 +1,6 @@
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
-use web_sys::{Request, RequestInit, RequestMode, Response};
+use web_sys::{window, Request, RequestInit, RequestMode, Response};
 use crate::{config, types::auth::*};
 use serde_wasm_bindgen::from_value;
 
@@ -117,4 +117,11 @@ pub async fn logout(user_id: i32) -> Result<(), String> {
     }
 
     Ok(())
+}
+
+pub fn load_auth_token() -> Option<String> {
+    let window = window().unwrap();
+    let storage = window.session_storage().unwrap().unwrap();
+ 
+    storage.get_item("user_id").unwrap()
 }

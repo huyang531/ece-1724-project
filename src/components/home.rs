@@ -11,18 +11,13 @@ use crate::components::layout::Header;
 use crate::context::auth::AuthContext;
 use crate::services::auth;
 
-fn load_auth_token() -> Option<String> {
-    let window = window().unwrap();
-    let storage = window.session_storage().unwrap().unwrap();
- 
-    storage.get_item("user_id").unwrap()
-}
+
 
 #[function_component]
 pub fn Home() -> Html {
     // Fetch login status from session storage
     let auth_ctx = use_context::<Rc<AuthContext>>().expect("Could not find AuthContext");
-    let auth_token = load_auth_token();
+    let auth_token = auth::load_auth_token();
     if let Some(token) = auth_token {
         if !auth_ctx.state.is_authenticated {
             // Set the auth context with the loaded token
