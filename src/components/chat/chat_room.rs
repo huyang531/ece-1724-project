@@ -47,7 +47,20 @@ impl Component for ChatRoom {
         log::debug!("ChatRoom create() called");
         let (auth_ctx, _) = ctx.link().context::<Rc<AuthContext>>(Callback::noop()).unwrap();
 
+        let auth_token = auth::load_auth_token();
+        log::debug!("Auth token: {:?}", auth_token);
+        if let Some(token) = auth_token {
+            log::debug!("Auth token found: {:?}", token);
+            if !auth_ctx.state.is_authenticated {
+                log::debug!("Auth token found and user is not authenticated");
+                // Set the auth context with the loaded token
+                auth_ctx.login.emit(token);
+            }
+        }
+
+        log::debug!("ChatRoom create() auth_ctx: {:?}", auth_ctx);
         let is_authenticated = auth_ctx.state.is_authenticated;
+        log::debug!("ChatRoom create() is_authenticated: {:?}", is_authenticated);
         
         if !is_authenticated {
             return Self {
