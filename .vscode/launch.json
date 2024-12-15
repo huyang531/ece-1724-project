@@ -10,7 +10,8 @@
             "name": "Debug",
             "program": "${workspaceFolder}/rust_chat_application/target/debug/rust_chat_application",
             "args": [],
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}/rust_chat_application",
+            // "preLaunchTask": "rust: cargo build",
         }
     ]
 }

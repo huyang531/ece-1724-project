@@ -38,14 +38,14 @@ pub async fn ws_handler(
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Extension(state): Extension<Arc<AppState>>,
 ) -> impl IntoResponse {
-    println!("Incoming websocket connection from {addr}");
+    tracing::info!("Incoming websocket connection from {addr}");
 
     let user_agent = if let Some(TypedHeader(user_agent)) = user_agent {
         user_agent.to_string()
     } else {
         String::from("Unknown browser")
     };
-    println!("`{user_agent}` at {addr} connected.");
+    tracing::info!("`{user_agent}` at {addr} connected.");
     // finalize the upgrade process by returning upgrade callback.
     // we can customize the callback by sending additional info such as address.
     ws.on_upgrade(move |socket| handle_socket(socket, addr, chat, state, query.user_id, query.username.clone()))
@@ -53,9 +53,9 @@ pub async fn ws_handler(
 
 /// Actual websocket statemachine (one will be spawned per connection)
 // async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32, username: String, user_id: i32, state: Arc<AppState>) {
-    // println!("Websocket context {who} created (user_id: {user_id})");
+    // tracing::info!("Websocket context {who} created (user_id: {user_id})");
 async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32,state: Arc<AppState>, user_id: i32, username: String) {
-    println!("Websocket context {who} created");
+    tracing::info!("Websocket context {who} created");
     // let username: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
     // let username_clone = username.clone();
     // let user_id: Arc<Mutex<Option<i32>>> = Arc::new(Mutex::new(None));
@@ -79,7 +79,7 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32,state: Arc<
             // }
             cnt += 1;
             if sender.send(Message::Text(serde_json::to_string(&msg).unwrap())).await.is_err() {
-                println!("client {who} abruptly disconnected because we could not send message to it");
+                tracing::info!("client {who} abruptly disconnected because we could not send message to it");
                 break;
             }
         }
@@ -90,18 +90,21 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32,state: Arc<
     let state_clone = state.clone();
     // let user_id_clone = user_id.clone();
     let mut recv_task = tokio::spawn(async move {
+        tracing::info!("Receive task created for {who} (user_id: {user_id})");
         let state = state_clone;
         // let username = username_clone;
         // let user_id = user_id_clone;
         let mut cnt = 0;
         loop {
             let msg = receiver.next().await.unwrap();
+            tracing::info!("Received message from {who}");
             match msg {
                 Ok(Message::Close(_)) => {
-                    println!("Client {who} sent close message");
+                    tracing::info!("Client {who} sent close message");
                     break;
                 }
                 Ok(Message::Text(msg)) => {
+                    tracing::info!("Received message from {who}: {msg}");
                     cnt += 1;
                     // Deserialize the message and send it to the chat channel
                     let msg: ChatMessage = serde_json::from_str(&msg).unwrap();
@@ -113,33 +116,54 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32,state: Arc<
                     //     *user_id = Some(msg.user_id);
                     // }
 
+                    
+
                     // Add it to db
                     let mut conn = state.pool.get_conn().await.unwrap();
-                    conn.exec_drop(
+                    match conn.exec_drop(
                         r"INSERT INTO Messages (chatroom_id, sender_id, message_text, sent_at) VALUES (:chatroom_id, :sender_id, :message_text, :sent_at)",
                         params! {
                             "chatroom_id" => chat,
                             "sender_id" => msg.user_id,
                             "message_text" => msg.content.clone(),
-                            "sent_at" => msg.timestamp.to_string(),
+                            "sent_at" => msg.timestamp.to_rfc3339(),
                         },
-                    ).await
-                    .expect("Could not insert message into db");
+                    ).await{
+                        Ok(_) => {
+                            // Send to the channel
+                            // let mut chat_channels = state.chat_channels.lock().await;
+                            // let tx = &chat_channels.get_mut(&chat).unwrap().0;
+                            // tx.send(msg).unwrap();
+                            send_to_channel(chat, state.clone(), msg).await;
+                            
+                        },
+                        Err(e) => {
+                            tracing::error!("Could not insert message into db due to {e}");
+                            let err_msg = ChatMessage {
+                                user_id: -1,
+                                username: String::from("Server"),
+                                content: format!("New Message: {msg}. Could not insert message into db due to {e}"),
+                                timestamp: chrono::Utc::now(),
+                                // addr: who,
+                            };
+                            send_to_channel(chat, state.clone(), err_msg).await;
+                            break;
+                        }
+                    }
 
-                    let mut chat_channels = state.chat_channels.lock().await;
-                    let tx = &chat_channels.get_mut(&chat).unwrap().0;
-                    tx.send(msg).unwrap();
+                    
                 }
                 Err(e) => {
-                    println!("Client {who} abruptly disconnected due to {e}");
+                    tracing::info!("Client {who} abruptly disconnected due to {e}");
                     break;
                 },
                 _ => {
-                    println!("Client {who} sent a message of a type we do not support");
+                    tracing::info!("Client {who} sent a message of a type we do not support");
                     break;
                 },
             }
         }
+        tracing::info!("Receive task destroyed for {who} (user_id: {user_id})");
         cnt
     });
 
@@ -163,15 +187,15 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32,state: Arc<
     tokio::select! {
         rv_a = (&mut send_task) => {
             match rv_a {
-                Ok(a) => println!("{a} messages sent to {who}"),
-                Err(a) => println!("Error sending messages {a:?}")
+                Ok(a) => tracing::info!("{a} messages sent to {who}"),
+                Err(a) => tracing::info!("Error sending messages {a:?}")
             }
             recv_task.abort();
         },
         rv_b = (&mut recv_task) => {
             match rv_b {
-                Ok(b) => println!("Received {b} messages"),
-                Err(b) => println!("Error receiving messages {b:?}")
+                Ok(b) => tracing::info!("Received {b} messages"),
+                Err(b) => tracing::info!("Error receiving messages {b:?}")
             }
             send_task.abort();
         }
@@ -206,40 +230,14 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32,state: Arc<
 
 
     // returning from the handler closes the websocket connection
-    println!("Websocket context {who} destroyed (user_id: {})", user_id);
-    // println!("Websocket context {who} destroyed (user_id: {})", user_id.lock().await.unwrap_or_else(|| -1));
+    tracing::info!("Websocket context {who} destroyed (user_id: {})", user_id);
+    // tracing::info!("Websocket context {who} destroyed (user_id: {})", user_id.lock().await.unwrap_or_else(|| -1));
 }
 
-/// helper to print contents of messages to stdout. Has special treatment for Close.
-fn process_message(msg: &Message, who: SocketAddr) -> ControlFlow<(), ()> {
-    match msg {
-        Message::Text(t) => {
-            println!(">>> {who} sent str: {t:?}");
-        }
-        Message::Binary(d) => {
-            println!(">>> {} sent {} bytes: {:?}", who, d.len(), d);
-        }
-        Message::Close(c) => {
-            if let Some(cf) = c {
-                println!(
-                    ">>> {} sent close with code {} and reason `{}`",
-                    who, cf.code, cf.reason
-                );
-            } else {
-                println!(">>> {who} somehow sent close message without CloseFrame");
-            }
-            return ControlFlow::Break(());
-        }
-
-        Message::Pong(v) => {
-            println!(">>> {who} sent pong with {v:?}");
-        }
-        // You should never need to manually handle Message::Ping, as axum's websocket library
-        // will do so for you automagically by replying with Pong and copying the v according to
-        // spec. But if you need the contents of the pings you can see them here.
-        Message::Ping(v) => {
-            println!(">>> {who} sent ping with {v:?}");
-        }
-    }
-    ControlFlow::Continue(())
+/// Helper function to send a message to a channel (chat)
+async fn send_to_channel(chat: i32, state: Arc<AppState>, msg: ChatMessage) {
+    let mut chat_channels = state.chat_channels.lock().await;
+    let tx = &chat_channels.get_mut(&chat).unwrap().0;
+    tx.send(msg).unwrap();
 }
+

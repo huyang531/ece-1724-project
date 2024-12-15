@@ -7,7 +7,7 @@ use tower_http::{
     add_extension::AddExtensionLayer, cors::{Any, CorsLayer}, trace::{DefaultMakeSpan, TraceLayer}
 };
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use std::{collections::HashMap, net::SocketAddr, sync::Arc};
+use std::{collections::HashMap, fmt::Display, net::SocketAddr, sync::Arc};
 use mysql_async::Pool;
 use chrono::{DateTime, Utc};
 
@@ -34,6 +34,12 @@ pub struct ChatMessage {
     pub content: String,
     pub timestamp: DateTime<Utc>,
     // pub addr: SocketAddr,
+}
+
+impl Display for ChatMessage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}: {}", self.username, self.content)
+    }
 }
 
 pub type ChatChannels = Arc<Mutex<HashMap<i32, (broadcast::Sender<ChatMessage>, broadcast::Receiver<ChatMessage>)>>>;
