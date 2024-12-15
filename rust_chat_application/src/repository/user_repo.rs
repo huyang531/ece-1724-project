@@ -112,22 +112,22 @@ impl UserRepository {
         }
     }
 
-    // 用户登录状态更新
-    pub async fn user_login(&self, user_id: i32) -> Result<(), String> {
-        let pool = get_db_pool().await;
-        let mut conn = pool.get_conn().await.map_err(|e| e.to_string())?;
+    // // 用户登录状态更新
+    // pub async fn user_login(&self, user_id: i32) -> Result<(), String> {
+    //     let pool = get_db_pool().await;
+    //     let mut conn = pool.get_conn().await.map_err(|e| e.to_string())?;
         
-        conn.exec_drop(
-            r"UPDATE Users SET status = 'online' WHERE user_id = :user_id",
-            params! {
-                "user_id" => user_id,
-            },
-        )
-        .await
-        .map_err(|e| e.to_string())?;
+    //     conn.exec_drop(
+    //         r"UPDATE Users SET status = 'online' WHERE user_id = :user_id",
+    //         params! {
+    //             "user_id" => user_id,
+    //         },
+    //     )
+    //     .await
+    //     .map_err(|e| e.to_string())?;
         
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
     // 用户登出状态更新
     pub async fn user_logout(&self, user_id: i32) -> Result<(), String> {

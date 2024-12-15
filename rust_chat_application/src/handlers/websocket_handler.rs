@@ -13,7 +13,7 @@ use tower_http::{
 };
 
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use mysql_async::{Pool, prelude::*};
+use mysql_async::{Pool, prelude::*, Row};
 
 //allows to extract the IP of connecting user
 use axum::extract::connect_info::ConnectInfo;
@@ -21,8 +21,10 @@ use axum::extract::ws::CloseFrame;
 
 //allows to split the websocket stream into separate TX and RX branches
 use futures::{sink::SinkExt, stream::StreamExt};
+use chrono::{DateTime, Utc, NaiveDateTime}; // Added DateTime and Utc
 
 use crate::{AppState, ChatMessage, WsQuery};
+
 
 
 /// The handler for the HTTP request (this gets called when the HTTP request lands at the start
@@ -65,6 +67,31 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32,state: Arc<
     // let user_id_clone = user_id.clone();
 
     let (mut sender, mut receiver) = socket.split();
+
+    // Fetch chat history before setting up the broadcast subscription
+    match fetch_chat_history(&state.pool, chat).await {
+        Ok(history) => {
+            // Send chat history as messages
+            for msg in history {
+                if sender.send(Message::Text(serde_json::to_string(&msg).unwrap())).await.is_err() {
+                    tracing::error!("Failed to send chat history to client {who}");
+                    return;
+                }
+            }
+        }
+        Err(e) => {
+            tracing::error!("Failed to fetch chat history: {}", e);
+            let err_msg = ChatMessage {
+                user_id: -1,
+                username: String::from("Server"),
+                content: String::from("Failed to load chat history"),
+                timestamp: chrono::Utc::now(),
+            };
+            if sender.send(Message::Text(serde_json::to_string(&err_msg).unwrap())).await.is_err() {
+                return;
+            }
+        }
+    }
 
     let mut rx = {
         let mut chat_channels = state.chat_channels.lock().await;
@@ -244,3 +271,39 @@ async fn send_to_channel(chat: i32, state: Arc<AppState>, msg: ChatMessage) {
     tx.send(msg).unwrap();
 }
 
+
+
+
+
+async fn fetch_chat_history(pool: &Pool, chat_id: i32) -> Result<Vec<ChatMessage>, mysql_async::Error> {
+    let mut conn = pool.get_conn().await?;
+    
+    let messages: Vec<ChatMessage> = conn
+        .exec_map(
+            r"SELECT m.sender_id, u.username, m.message_text, 
+              UNIX_TIMESTAMP(m.sent_at) as sent_at 
+              FROM Messages m 
+              LEFT JOIN Users u ON m.sender_id = u.user_id 
+              WHERE m.chatroom_id = :chat_id 
+              ORDER BY m.sent_at ASC 
+              LIMIT 50",
+            params! {
+                "chat_id" => chat_id,
+            },
+            |row: Row| {
+                let timestamp_unix: i64 = row.get("sent_at").unwrap();
+                let timestamp = DateTime::<Utc>::from_timestamp(timestamp_unix, 0).unwrap();
+                
+                ChatMessage {
+                    user_id: row.get("sender_id").unwrap(),
+                    username: row.get::<String, _>("username")
+                               .unwrap_or_else(|| String::from("Deleted User")),
+                    content: row.get("message_text").unwrap(),
+                    timestamp,
+                }
+            }
+        )
+        .await?;
+
+    Ok(messages)
+}

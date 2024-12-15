@@ -55,12 +55,12 @@ impl AppState {
     pub fn new() -> Self {
         AppState {
             chat_channels: Arc::new(Mutex::new(HashMap::new())),
-            pool: Pool::new("mysql://root:lyy@localhost/chat_app"),
+            pool: Pool::new("mysql://root:root@localhost/chat_app"),
             // usernames: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 }
-
+//mysql://root:root@localhost/chat_app
 #[tokio::main]
 async fn main() {
     tracing_subscriber::registry()
@@ -106,6 +106,7 @@ async fn main() {
         );
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    // let addr = SocketAddr::from(([0,0,0,0], 3000));
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     
     tracing::debug!("Listening on {}", listener.local_addr().unwrap());
