@@ -65,24 +65,28 @@ impl WebSocketService {
                 }
                 
                 if receiver.lock().await.is_none() {
-                    log::debug!("WebSocketService: receiver is None, skipping...");
+                    // log::debug!("WebSocketService: receiver is None, skipping...");
                     sleep(Duration::from_millis(100)).await;
                     continue;
                 }
 
-                log::debug!("WebSocketService: receiver is not None, processing messages...");
+                // log::debug!("WebSocketService: receiver is not None, processing messages...");
                 let receiver_lock = receiver.clone();
-                log::debug!("WebSocketService: receiver_lock created");
+                // log::debug!("WebSocketService: receiver_lock created");
                 if let Some(receiver) = receiver_lock.lock().await.as_mut() {
-                log::debug!("WebSocketService: receiver_lock acquired");
+                // log::debug!("WebSocketService: receiver_lock acquired");
                     while let Some(msg) = receiver.next().await {
                         let msg = msg.unwrap();
-                        let msg = serde_json::from_str::<ChatMessage>(&msg.into_text().unwrap()).unwrap();
+                        let msg = msg.into_text().unwrap();
+                        let msg = serde_json::from_str::<ChatMessage>(&msg.as_str()).unwrap_or_else(|_| {
+                            log::error!("WebSocketService: failed to parse message: {:?}", msg);
+                            ChatMessage::default()
+                        });
                         on_message.emit(msg);
                     }
-                }
-                log::debug!("WebSocketService: receiver_lock released, starting next iter...");
-            }
+                };
+                // log::debug!("WebSocketService: receiver_lock released, starting next iter...");
+            };
         });
 
         log::debug!("WebSocketService new() finished");
@@ -91,6 +95,7 @@ impl WebSocketService {
     }
 
     pub async fn send_message(&mut self, message: &String) -> Option<tokio_tungstenite_wasm::Error> {
+        log::debug!("WebSocketService: send_message() called");
         let msg = ChatMessage {
             user_id: self.user_id,
             username: self.username.clone(),
@@ -104,6 +109,7 @@ impl WebSocketService {
                 Err(e) => Some(e),
             }
         } else {
+            log::error!("WebSocketService: sender is None, returning ConnectionClosed error");
             Some(tokio_tungstenite_wasm::Error::ConnectionClosed)
         }
 

@@ -1,12 +1,9 @@
-use std::future::Future;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use futures::future::BoxFuture;
-use tokio_tungstenite_wasm::WebSocketStream;
-use wasm_bindgen::JsCast;
+use futures::lock::Mutex;
+use yew::platform::spawn_local;
 use yew::prelude::*;
-use web_sys::WebSocket;
 
 use crate::config;
 use crate::context::auth::AuthContext;
@@ -23,7 +20,7 @@ pub struct Props {
 pub struct ChatRoom
 {
     messages: Vec<ChatMessage>,
-    wss: Option<WebSocketService>,
+    wss: Arc<Mutex<Option<WebSocketService>>>,
     // link: ComponentLink<Self>,
     current_message: String,
     is_authenticated: bool,
@@ -34,7 +31,7 @@ pub enum Msg {
     SendMessage,
     UpdateMessage(String),
     ReceiveMessage(ChatMessage),
-    AuthContextHandler(AuthContext),
+    AuthContextHandler(Rc<AuthContext>),
 }
 
 
@@ -45,7 +42,8 @@ impl Component for ChatRoom {
     fn create(ctx: &Context<Self>) -> Self {
         // let (auth_ctx, _) = ctx.link().context(ctx.link().callback(Msg::AuthContextHandler)).unwrap();
         log::debug!("ChatRoom create() called");
-        let (auth_ctx, _) = ctx.link().context::<Rc<AuthContext>>(Callback::noop()).unwrap();
+        let on_auth = ctx.link().callback(Msg::AuthContextHandler);
+        let (auth_ctx, _) = ctx.link().context::<Rc<AuthContext>>(on_auth).unwrap();
 
         let auth_token = auth::load_auth_token();
         log::debug!("Auth token: {:?}", auth_token);
@@ -65,7 +63,7 @@ impl Component for ChatRoom {
         if !is_authenticated {
             return Self {
                 messages: Vec::new(),
-                wss: None,
+                wss: Arc::new(Mutex::new(None)),
                 current_message: String::new(),
                 is_authenticated: false,
             }
@@ -73,6 +71,8 @@ impl Component for ChatRoom {
 
         let link = ctx.link().clone();
         let on_message = link.callback(Msg::ReceiveMessage);
+
+
         let wss = WebSocketService::new(
             &format!("{}{}?user_id={}&username={}", config::WS_BASE_URL, ctx.props().id, auth_ctx.state.user_id.unwrap(), auth_ctx.state.username.clone().unwrap()),
             auth_ctx.state.user_id.unwrap(),
@@ -83,7 +83,7 @@ impl Component for ChatRoom {
         log::debug!("ChatRoom create() finished");
         Self {
             messages: Vec::new(),
-            wss: Some(wss),
+            wss: Arc::new(Mutex::new(Some(wss))),
             current_message: String::new(),
             is_authenticated,
         }
@@ -91,17 +91,34 @@ impl Component for ChatRoom {
 
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+        let wss_clone = self.wss.clone();
+        let message_clone = self.current_message.clone();
         match msg {
             Msg::SendMessage => {
-                match self.wss.as_mut() {
-                    Some(ref mut wss) => {
-                        wss.send_message(&self.current_message);
+                log::debug!("Msg::SendMessage received");
+                spawn_local(async move {
+                    let mut wss = wss_clone.lock().await;
+                    match wss.as_mut() {
+                        Some(ref mut wss) => {
+                            if message_clone.is_empty() {
+                                log::debug!("Message is empty, skipping...");
+                            }
+                            log::debug!("Calling wss.send_message()...");
+                                match wss.send_message(&message_clone).await {
+                                    Some(err) => {
+                                        log::error!("Error sending message: {:?}", err);
+                                    }
+                                    None => {
+                                        log::debug!("Message sent successfully");
+                                    }
+                                }
+                            log::debug!("Returning true...");
+                        }
+                        None => {
+                            log::error!("WebSocket connection not established");
+                        }
                     }
-                    None => {
-                        log::error!("WebSocket connection not established");
-                        return false;
-                    }
-                };
+                });
                 self.current_message.clear();
                 true
             }
@@ -135,11 +152,13 @@ impl Component for ChatRoom {
 
         let onsubmit = ctx.link().callback(|e: MouseEvent| {
             e.prevent_default();
+            log::debug!("Send message button clicked");
             Msg::SendMessage
         });
 
         let oninput = ctx.link().callback(|e: InputEvent| {
             let input = e.target_unchecked_into::<web_sys::HtmlInputElement>();
+            log::debug!("Input event: {:?}", input.value());
             Msg::UpdateMessage(input.value())
         });
         

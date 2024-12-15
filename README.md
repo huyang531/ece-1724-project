@@ -31,8 +31,7 @@ trunk serve
 
 # TOOD
 
-- Fix sending/receiving message
 - ChatRoom session (how to disconnect websocket when going back to the Home Screen, equivalence of use_effect_with()?)
 - Show Room ID in ChatRoom
+- Show Chat history when user joined Chat Room
 - Add back button
-- Add Chat history

@@ -8,7 +8,7 @@ pub struct WsQuery {
     username: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct ChatMessage {
     pub user_id: i32,            
     pub username: String,
