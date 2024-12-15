@@ -4,8 +4,9 @@ use std::sync::Arc;
 use futures::lock::Mutex;
 use yew::platform::spawn_local;
 use yew::prelude::*;
+use yew_router::prelude::RouterScopeExt;
 
-use crate::config;
+use crate::{config, Route};
 use crate::context::auth::AuthContext;
 use crate::services::websocket::WebSocketService;
 use crate::types::chat::ChatMessage;
@@ -15,6 +16,7 @@ use crate::services::auth;
 #[derive(Properties, PartialEq)]
 pub struct Props {
     pub id: String,
+    // pub name: String,
 }
 
 pub struct ChatRoom
@@ -141,6 +143,7 @@ impl Component for ChatRoom {
     fn view(&self, ctx: &Context<Self>) -> Html {
         // Check if user is logged in yet
         if !self.is_authenticated {
+            ctx.link().navigator().unwrap().push(&Route::Home);
             return html! {
                 <>
                     <Header />
@@ -148,7 +151,7 @@ impl Component for ChatRoom {
                         <h3>{"Please log in and join the Chat Room via the \"Join Chat Room\" portal"}</h3>
                     </div>
                 </>
-            }
+            };
         }
 
         let onsubmit = ctx.link().callback(|e: SubmitEvent| {
@@ -163,28 +166,6 @@ impl Component for ChatRoom {
             Msg::UpdateMessage(input.value())
         });
         
-        
-        // let messages = use_state(Vec::<ChatMessage>::new);
-        // let current_message = use_state(|| String::new());
-        // let ws = use_state(|| Option::<WebSocket>::None);
-    
-        // // WebSocket connection effect
-        // use_effect_with(
-        //     (),
-        //     move |_| {
-        //         // TODO: Implement WebSocket connection
-        //         || {}
-        //     },
-        // );
-    
-        // let onsubmit = {
-        //     let current_message = current_message.clone();
-        //     Callback::from(move |e: SubmitEvent| {
-        //         e.prevent_default();
-        //         // TODO: Send message via WebSocket
-        //         current_message.set(String::new());
-        //     })
-        // };
     
         html! {
             <>
@@ -219,48 +200,15 @@ impl Component for ChatRoom {
                 </div>
             </>
         }
-    
-            // html! {
-            //     <div class="chat-room">
-            //         <div class="messages">
-            //             {messages.iter().map(|msg| html! {
-            //                 <div class="message">
-            //                     <span class="username">{&msg.user.username}</span>
-            //                     <span class="content">{&msg.content}</span>
-            //                 </div>
-            //             }).collect::<Html>()}
-            //         </div>
-            //         <form {onsubmit}>
-            //             <input 
-            //                 type="text"
-            //                 value={(*current_message).clone()}
-            //                 onchange={let current_message = current_message.clone(); move |e: Event| {
-            //                     let target = e.target().unwrap();
-            //                     let input = target.dyn_into::<web_sys::HtmlInputElement>().unwrap();
-            //                     current_message.set(input.value());
-            //                 }}
-            //             />
-            //             <button type="submit">{"Send"}</button>
-            //         </form>
-            //     </div>
-            // }
     }
 
-    fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        true
-    }
-
-    fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {}
-
-    fn prepare_state(&self) -> Option<String> {
-        None
-    }
-
-    fn destroy(&mut self, ctx: &Context<Self>) {
-        log::debug!("ChatRoom destroy() called");
-        // if let Some(wss) = self.wss.as_mut() {
-        //     wss.close();
-        // }
-    } 
-    
+    // fn destroy(&mut self, _ctx: &Context<Self>) {
+    //     log::debug!("ChatRoom destroy() called");
+    //     let wss_clone = self.wss.clone();
+    //     spawn_local(async move {
+    //         if let Some(wss) = wss_clone.lock().await.as_mut() {
+    //             wss.close();
+    //         }
+    //     });
+    // } 
 }

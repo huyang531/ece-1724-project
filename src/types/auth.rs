@@ -7,6 +7,7 @@ pub struct LoginRequest {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 pub struct LoginResponse {
     pub message: String,
     pub uid: i32,
@@ -21,6 +22,7 @@ pub struct SignupRequest {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 pub struct SignupResponse {
     pub message: String,
 }

@@ -7,6 +7,7 @@ pub struct CreateChatRoomRequest {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 pub struct CreateChatRoomResponse {
     pub message: String,
     pub room_id: i32,
@@ -19,6 +20,7 @@ pub struct JoinChatRoomRequest {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 pub struct JoinChatRoomResponse {
     pub message: String,
     pub room_name: String,

@@ -1,13 +1,8 @@
 use std::{sync::{atomic::{AtomicBool, Ordering}, Arc}, time::Duration};
-
-use futures::{lock::Mutex, stream::{SplitSink, SplitStream}, SinkExt, StreamExt};
-// src/services/websocket.rs
-use wasm_bindgen::prelude::*;
+use futures::{lock::Mutex, pin_mut, stream::{SplitSink, SplitStream}, FutureExt, SinkExt, StreamExt};
 use wasm_bindgen_futures::spawn_local;
 use tokio_tungstenite_wasm::{connect, WebSocketStream, Message};
-// use futures_util::stream::stream::StreamExt;
-use yew::{html::IntoPropValue, platform::time::sleep, Callback};
-
+use yew::{platform::time::sleep, Callback};
 use crate::types::chat::ChatMessage;
 
 pub struct WebSocketService {
@@ -49,7 +44,7 @@ impl WebSocketService {
             log::debug!("init ws thread: acquiring two locks...");
             *struct_sender.lock().await = Some(sender);
             *struct_receiver.lock().await = Some(receiver);
-            log::debug!("init ws thread: locks released");
+            log::debug!("init ws thread: locks released. Sender and Receiver set.");
         });
         
         // Handle incoming messages
@@ -60,32 +55,41 @@ impl WebSocketService {
             let receiver = receiver_clone;
             loop {
                 if cancel_clone.load(Ordering::SeqCst) {
-                    log::debug!("WebSocketService: cancellation signal received, breaking loop...");
+                    log::warn!("WebSocketService: cancellation signal received, killing WebSocketService...");
                     break;
                 }
-                
-                if receiver.lock().await.is_none() {
-                    // log::debug!("WebSocketService: receiver is None, skipping...");
+                        
+                let mut receiver_lock = receiver.lock().await;
+                if receiver_lock.is_none() {
+                    drop(receiver_lock);
                     sleep(Duration::from_millis(100)).await;
                     continue;
                 }
 
-                // log::debug!("WebSocketService: receiver is not None, processing messages...");
-                let receiver_lock = receiver.clone();
-                // log::debug!("WebSocketService: receiver_lock created");
-                if let Some(receiver) = receiver_lock.lock().await.as_mut() {
-                // log::debug!("WebSocketService: receiver_lock acquired");
-                    while let Some(msg) = receiver.next().await {
-                        let msg = msg.unwrap();
-                        let msg = msg.into_text().unwrap();
-                        let msg = serde_json::from_str::<ChatMessage>(&msg.as_str()).unwrap_or_else(|_| {
-                            log::error!("WebSocketService: failed to parse message: {:?}", msg);
-                            ChatMessage::default()
-                        });
-                        on_message.emit(msg);
-                    }
+                let cancel_fut = is_cancelled(cancel_clone.clone()).fuse();
+                let mut receiver_fut = receiver_lock.as_mut().unwrap().next().fuse();
+
+                pin_mut!(cancel_fut);
+
+                futures::select! {
+                    cancel = cancel_fut => {
+                        if cancel {
+                            log::warn!("WebSocketService: cancellation signal received, exiting...");
+                            return;
+                        }
+                    },
+                    msg = receiver_fut => {
+                        if let Some(msg) = msg {
+                            let msg = msg.unwrap();
+                            let msg = msg.into_text().unwrap();
+                            let msg = serde_json::from_str::<ChatMessage>(&msg.as_str()).unwrap_or_else(|_| {
+                                log::error!("WebSocketService: failed to parse message: {:?}", msg);
+                                ChatMessage::default()
+                            });
+                            on_message.emit(msg);
+                        }
+                    },
                 };
-                // log::debug!("WebSocketService: receiver_lock released, starting next iter...");
             };
         });
 
@@ -112,11 +116,22 @@ impl WebSocketService {
             log::error!("WebSocketService: sender is None, returning ConnectionClosed error");
             Some(tokio_tungstenite_wasm::Error::ConnectionClosed)
         }
+    }
 
-        // match self.sender.send(Message::Text(serde_json::to_string(&msg).unwrap())).await {
-        //     Ok(_) => None,
-        //     Err(e) => Some(e),
-        // }
+    #[allow(dead_code)]
+    pub fn close(&self) {
+        log::debug!("WebSocketService: close() called, setting cancellation signal...");
+        self.cancel.store(true, Ordering::SeqCst);
+    }
+}
+
+// Cancel listener
+async fn is_cancelled(cancel_clone: Arc<AtomicBool>) -> bool {
+    loop {
+        if cancel_clone.load(Ordering::SeqCst) {
+            return true;
+        }
+        sleep(Duration::from_millis(100)).await;
     }
 }
 
@@ -126,38 +141,3 @@ impl Drop for WebSocketService {
         self.cancel.store(true, Ordering::SeqCst);
     }
 }
-
-// pub struct WebSocketService {
-//     ws: WebSocket,
-//     user_id: i32,
-//     username: String,
-// }
-
-// impl WebSocketService {
-//     pub fn new(url: &str, user_id: i32, username: String, on_message: Callback<ChatMessage>) -> Self {
-//         let ws = WebSocket::new(url).unwrap();
-        
-//         // Handle incoming messages
-//         let onmessage_callback = Closure::wrap(Box::new(move |e: web_sys::MessageEvent| {
-//             if let Some(txt) = e.data().as_string() {
-//                 let msg = serde_json::from_str::<ChatMessage>(&txt).unwrap();
-//                 on_message.emit(msg);
-//             }
-//         }) as Box<dyn FnMut(web_sys::MessageEvent)>);
-//         ws.set_onmessage(Some(onmessage_callback.as_ref().unchecked_ref()));
-//         onmessage_callback.forget();
-//         Self { ws, user_id, username }
-//     }
-
-//     pub fn send_message(&self, message: &String) -> Result<(), JsValue> {
-//         todo!()
-//         // self.ws.send_with_str(message)
-//         // let msg = ChatMessage {
-//         //     user_id: self.user_id,
-//         //     username: self.username.clone(),
-//         //     content: message.clone(),
-//         //     addr: self.ws.
-//         // };
-//     }
-// }
-

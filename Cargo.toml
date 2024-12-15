@@ -2,8 +2,6 @@
 name = "chatroom-yew"
 version = "0.1.0"
 edition = "2021"
-rustflags = ["--cfg", "tokio_unstable"]
-target = "wasm32-wasi"
 
 [dependencies]
 yew = { version = "0.21.0", features = ["csr"] }

@@ -1,7 +1,7 @@
 use wasm_bindgen::JsCast;
 use web_sys::{window, HtmlInputElement};
 use yew::prelude::*;
-use yew_router::{navigator, prelude::*};
+use yew_router::prelude::*;
 use yew::platform::spawn_local;
 use crate::Route;
 use crate::components::layout::Header;

@@ -1,7 +1,7 @@
 use std::rc::Rc;
 use yew::platform::spawn_local;
 use yew::prelude::*;
-use yew_router::{navigator, prelude::*};
+use yew_router::prelude::*;
 use web_sys::HtmlInputElement;
 use web_sys::window;
 use wasm_bindgen::JsCast;
@@ -72,12 +72,6 @@ pub fn Login() -> Html {
         <>
             <Header />
             <div class="auth-container">
-                // <button 
-                //         onclick={let navigator = navigator.clone(); move |_| { navigator.back(); }}
-                //         class="back-button"
-                //     >
-                //         {"← Back"}
-                //     </button>
                 <h2 class="auth-title">{"Welcome Back"}</h2>
                 <form class="auth-form" {onsubmit}>
                     <div class="form-group">
