@@ -18,7 +18,14 @@ Please refer to the front-end README for how to run the frontend.
 #### Manually
 
 We can ping the server using command line utilities or a web browser.
-For example, we can communicate with the server using `wscat`:
+But first, we need to set up the server:
+
+```sh
+bash ./init.sh
+```
+This will create three users and three chat rooms.
+
+Then, we can try communicate with the server using `wscat`, for example:
 
 ```sh
 npm install -g wscat
