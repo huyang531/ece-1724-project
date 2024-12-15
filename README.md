@@ -22,7 +22,7 @@ For example, we can communicate with the server using `wscat`:
 
 ```sh
 npm install -g wscat
-wscat -c ws://localhost:3011/ws/1
+wscat -c ws://localhost:3000/ws/1
 ```
 
 ## Run Example WS Application
