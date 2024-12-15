@@ -102,6 +102,7 @@ impl Component for ChatRoom {
                         Some(ref mut wss) => {
                             if message_clone.is_empty() {
                                 log::debug!("Message is empty, skipping...");
+                                return;
                             }
                             log::debug!("Calling wss.send_message()...");
                                 match wss.send_message(&message_clone).await {
@@ -150,7 +151,7 @@ impl Component for ChatRoom {
             }
         }
 
-        let onsubmit = ctx.link().callback(|e: MouseEvent| {
+        let onsubmit = ctx.link().callback(|e: SubmitEvent| {
             e.prevent_default();
             log::debug!("Send message button clicked");
             Msg::SendMessage
@@ -205,7 +206,7 @@ impl Component for ChatRoom {
                             // Messages will be displayed here
                         </div>
                     </div>
-                    <div class="send-message-box">
+                    <form class="send-message-box" onsubmit={onsubmit}>
                         <input
                             type="text"
                             placeholder="Type your message..."
@@ -213,8 +214,8 @@ impl Component for ChatRoom {
                             value={self.current_message.clone()}
                             oninput={oninput}
                         />
-                        <button class="send-button" onclick={onsubmit}>{"Send"}</button>
-                    </div>
+                        <button type="submit" class="send-button">{"Send"}</button>
+                    </form>
                 </div>
             </>
         }
