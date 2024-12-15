@@ -33,7 +33,7 @@ use crate::{AppState, ChatMessage, WsQuery};
 pub async fn ws_handler(
     ws: WebSocketUpgrade,
     Path(chat): Path<i32>,
-    // Query(query): Query<WsQuery>,
+    Query(query): Query<WsQuery>,
     user_agent: Option<TypedHeader<headers::UserAgent>>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Extension(state): Extension<Arc<AppState>>,
@@ -48,19 +48,18 @@ pub async fn ws_handler(
     println!("`{user_agent}` at {addr} connected.");
     // finalize the upgrade process by returning upgrade callback.
     // we can customize the callback by sending additional info such as address.
-    ws.on_upgrade(move |socket| handle_socket(socket, addr, chat, state))
-    // ws.on_upgrade(move |socket| handle_socket(socket, addr, chat, Arc::new(AppState::new())))
+    ws.on_upgrade(move |socket| handle_socket(socket, addr, chat, state, query.user_id, query.username.clone()))
 }
 
 /// Actual websocket statemachine (one will be spawned per connection)
 // async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32, username: String, user_id: i32, state: Arc<AppState>) {
     // println!("Websocket context {who} created (user_id: {user_id})");
-async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32,state: Arc<AppState>) {
+async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32,state: Arc<AppState>, user_id: i32, username: String) {
     println!("Websocket context {who} created");
-    let username: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
-    let username_clone = username.clone();
-    let user_id: Arc<Mutex<Option<i32>>> = Arc::new(Mutex::new(None));
-    let user_id_clone = user_id.clone();
+    // let username: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+    // let username_clone = username.clone();
+    // let user_id: Arc<Mutex<Option<i32>>> = Arc::new(Mutex::new(None));
+    // let user_id_clone = user_id.clone();
 
     let (mut sender, mut receiver) = socket.split();
 
@@ -71,7 +70,7 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32,state: Arc<
 
     // Spawn a task that will push several messages to the client (does not matter what client does)
     let mut send_task = tokio::spawn(async move {
-        let user_id = user_id_clone;
+        // let user_id = user_id_clone;
         let mut cnt = 0;
         loop {
             let msg = rx.recv().await.unwrap();
@@ -89,11 +88,11 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32,state: Arc<
 
     // This second task will receive messages from client and print them on server console
     let state_clone = state.clone();
-    let user_id_clone = user_id.clone();
+    // let user_id_clone = user_id.clone();
     let mut recv_task = tokio::spawn(async move {
         let state = state_clone;
-        let username = username_clone;
-        let user_id = user_id_clone;
+        // let username = username_clone;
+        // let user_id = user_id_clone;
         let mut cnt = 0;
         loop {
             let msg = receiver.next().await.unwrap();
@@ -107,17 +106,17 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32,state: Arc<
                     // Deserialize the message and send it to the chat channel
                     let msg: ChatMessage = serde_json::from_str(&msg).unwrap();
 
-                    let mut username = username.lock().await;
-                    let mut user_id = user_id.lock().await;
-                    if username.is_none() || user_id.is_none() {
-                        *username = Some(msg.username.clone());
-                        *user_id = Some(msg.user_id);
-                    }
+                    // let mut username = username.lock().await;
+                    // let mut user_id = user_id.lock().await;
+                    // if username.is_none() || user_id.is_none() {
+                    //     *username = Some(msg.username.clone());
+                    //     *user_id = Some(msg.user_id);
+                    // }
 
                     // Add it to db
                     let mut conn = state.pool.get_conn().await.unwrap();
                     conn.exec_drop(
-                        r"INSERT INTO ChatMessages (chatroom_id, sender_id, message_text, sent_at) VALUES (:chatroom_id, :sender_id, :message_text, :sent_at)",
+                        r"INSERT INTO Messages (chatroom_id, sender_id, message_text, sent_at) VALUES (:chatroom_id, :sender_id, :message_text, :sent_at)",
                         params! {
                             "chatroom_id" => chat,
                             "sender_id" => msg.user_id,
@@ -148,12 +147,13 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32,state: Arc<
     {
         let mut chat_channels = state.chat_channels.lock().await;
         let tx = &chat_channels.get_mut(&chat).unwrap().0;
-        let username = username.lock().await;
-        let user_id = user_id.lock().await;
+        // let username = username.lock().await;
+        // let user_id = user_id.lock().await;
         tx.send(ChatMessage {
             user_id: -1,
             username: String::from("Server"),
-            content: format!("User {} (user_id: {}) joined the chat room", (*username).clone().unwrap_or_else(|| String::from("Unknown")), user_id.unwrap_or_else(|| -1)),
+            content: format!("User {} (user_id: {}) joined the chat room", username, user_id),
+            // content: format!("User {} (user_id: {}) joined the chat room", (*username).clone().unwrap_or_else(|| String::from("Unknown")), user_id.unwrap_or_else(|| -1)),
             timestamp: chrono::Utc::now(),
             // addr: who,
         }).unwrap();
@@ -181,12 +181,13 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32,state: Arc<
     {
         let mut chat_channels = state.chat_channels.lock().await;
         let tx = &chat_channels.get_mut(&chat).unwrap().0;
-        let username = username.lock().await;
-        let user_id = user_id.lock().await;
+        // let username = username.lock().await;
+        // let user_id = user_id.lock().await;
         tx.send(ChatMessage {
             user_id: -1,
             username: String::from("Server"),
-            content: format!("User {} (user_id: {}) left the chat room", (*username).clone().unwrap_or_else(|| String::from("Unknown")), user_id.unwrap_or_else(|| -1)),
+            content: format!("User {} (user_id: {}) left the chat room", username, user_id),
+            // content: format!("User {} (user_id: {}) left the chat room", (*username).clone().unwrap_or_else(|| String::from("Unknown")), user_id.unwrap_or_else(|| -1)),
             timestamp: chrono::Utc::now(),
             // addr: who,
         }).unwrap();
@@ -196,7 +197,7 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32,state: Arc<
         conn.exec_drop(
             r"DELETE FROM UserInChatRoom WHERE user_id = :user_id AND chatroom_id = :chatroom_id",
             params! {
-                "user_id" => *user_id,
+                "user_id" => user_id,
                 "chatroom_id" => chat,
             },
         ).await
@@ -205,7 +206,8 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32,state: Arc<
 
 
     // returning from the handler closes the websocket connection
-    println!("Websocket context {who} destroyed (user_id: {})", user_id.lock().await.unwrap_or_else(|| -1));
+    println!("Websocket context {who} destroyed (user_id: {})", user_id);
+    // println!("Websocket context {who} destroyed (user_id: {})", user_id.lock().await.unwrap_or_else(|| -1));
 }
 
 /// helper to print contents of messages to stdout. Has special treatment for Close.

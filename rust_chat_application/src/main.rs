@@ -1,6 +1,5 @@
 use axum::{
-    routing::{any, get, post},
-    Router
+    routing::{any, get, post}, Extension, Router
 };
 use serde::{Deserialize, Serialize};
 use tokio::sync::{broadcast, Mutex};
@@ -79,7 +78,7 @@ async fn main() {
      }
     // Build the application with routes
     let app = Router::new()
-        .route("/", get(root))
+        // .route("/", get(root))
         .route("/api/chatrooms", post(create_chat_room))
         .route("/api/chatrooms/join", post(join_chat_room))
         .route("/api/chatrooms/leave", post(leave_chat_room))
@@ -88,7 +87,7 @@ async fn main() {
         .route("/api/user/logout", post(user_logout))
         .route("/api/user/fetch_status", post(fetch_user_status))
         .route("/ws/{chat}", any(ws_handler))
-        .layer(AddExtensionLayer::new(AppState::new()))
+        .layer(Extension(Arc::new(AppState::new())))
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(DefaultMakeSpan::default().include_headers(true)),
