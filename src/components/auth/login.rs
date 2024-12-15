@@ -38,7 +38,7 @@ pub fn Login() -> Html {
             spawn_local(async move {
                 match auth::login(email, password).await {
                     Ok(response) => {
-                        auth_ctx.login.emit(response.uid);
+                        auth_ctx.login.emit((response.uid, response.username));
                         log::info!("Login successful");
                         window().unwrap().alert_with_message("Login successful").unwrap();
                         storage.set_item("user_id", &response.uid.to_string()).unwrap(); 

@@ -21,7 +21,7 @@ pub fn Home() -> Html {
     if let Some(token) = auth_token {
         if !auth_ctx.state.is_authenticated {
             // Set the auth context with the loaded token
-            auth_ctx.login.emit(token.parse().unwrap());
+            auth_ctx.login.emit(token);
         }
     }
 

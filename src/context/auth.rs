@@ -6,6 +6,7 @@ use yew::prelude::*;
 pub struct AuthState {
     pub is_authenticated: bool,
     pub user_id: Option<i32>,
+    pub username: Option<String>,
 }
 
 impl Default for AuthState {
@@ -13,6 +14,7 @@ impl Default for AuthState {
         Self {
             is_authenticated: false,
             user_id: None,
+            username: None,
         }
     }
 }
@@ -20,7 +22,7 @@ impl Default for AuthState {
 #[derive(Clone, PartialEq, Debug)]
 pub struct AuthContext {
     pub state: AuthState,
-    pub login: Callback<i32>, // Takes user_id
+    pub login: Callback<(i32, String)>, // Takes user_id
     pub logout: Callback<()>,
 }
 
@@ -37,10 +39,11 @@ pub fn AuthProvider(props: &AuthProviderProps) -> Html {
     let login = {
         log::debug!("AuthProvider login Callback called");
         let state = state.clone();
-        Callback::from(move |user_id: i32| {
+        Callback::from(move |tuple: (i32, String)| {
             state.set(AuthState {
                 is_authenticated: true,
-                user_id: Some(user_id),
+                user_id: Some(tuple.0),
+                username: Some(tuple.1),
             });
         })
     };
