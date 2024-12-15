@@ -1,8 +1,8 @@
 use axum::{
-    extract::{ws::{Message, WebSocket, WebSocketUpgrade}, Path}, response::IntoResponse, routing::any, Extension, Router
+    extract::{ws::{Message, WebSocket, WebSocketUpgrade}, Path, Query}, response::IntoResponse, routing::any, Extension, Router
 };
 use axum_extra::TypedHeader;
-use tokio::sync::broadcast;
+use tokio::sync::{broadcast, Mutex};
 
 use std::{borrow::Cow, sync::Arc};
 use std::ops::ControlFlow;
@@ -13,6 +13,7 @@ use tower_http::{
 };
 
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use mysql_async::{Pool, prelude::*};
 
 //allows to extract the IP of connecting user
 use axum::extract::connect_info::ConnectInfo;
@@ -21,7 +22,7 @@ use axum::extract::ws::CloseFrame;
 //allows to split the websocket stream into separate TX and RX branches
 use futures::{sink::SinkExt, stream::StreamExt};
 
-use crate::AppState;
+use crate::{AppState, ChatMessage, WsQuery};
 
 
 /// The handler for the HTTP request (this gets called when the HTTP request lands at the start
@@ -32,11 +33,12 @@ use crate::AppState;
 pub async fn ws_handler(
     ws: WebSocketUpgrade,
     Path(chat): Path<i32>,
+    // Query(query): Query<WsQuery>,
     user_agent: Option<TypedHeader<headers::UserAgent>>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Extension(state): Extension<Arc<AppState>>,
 ) -> impl IntoResponse {
-
+    println!("Incoming websocket connection from {addr}");
 
     let user_agent = if let Some(TypedHeader(user_agent)) = user_agent {
         user_agent.to_string()
@@ -47,27 +49,37 @@ pub async fn ws_handler(
     // finalize the upgrade process by returning upgrade callback.
     // we can customize the callback by sending additional info such as address.
     ws.on_upgrade(move |socket| handle_socket(socket, addr, chat, state))
+    // ws.on_upgrade(move |socket| handle_socket(socket, addr, chat, Arc::new(AppState::new())))
 }
 
 /// Actual websocket statemachine (one will be spawned per connection)
-async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32, state: Arc<AppState>) {
+// async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32, username: String, user_id: i32, state: Arc<AppState>) {
+    // println!("Websocket context {who} created (user_id: {user_id})");
+async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32,state: Arc<AppState>) {
+    println!("Websocket context {who} created");
+    let username: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+    let username_clone = username.clone();
+    let user_id: Arc<Mutex<Option<i32>>> = Arc::new(Mutex::new(None));
+    let user_id_clone = user_id.clone();
+
     let (mut sender, mut receiver) = socket.split();
 
     let mut rx = {
-        let mut chat_channels = state.chat_channels.lock().unwrap();
+        let mut chat_channels = state.chat_channels.lock().await;
         chat_channels.entry(chat).or_insert_with(|| broadcast::channel(16)).0.subscribe()
     };
 
     // Spawn a task that will push several messages to the client (does not matter what client does)
     let mut send_task = tokio::spawn(async move {
+        let user_id = user_id_clone;
         let mut cnt = 0;
         loop {
-            let (msg, from) = rx.recv().await.unwrap();
-            if from == who {
-                continue;
-            }
+            let msg = rx.recv().await.unwrap();
+            // if msg.user_id == user_id.lock().await.unwrap_or_else(|| -1) {
+            //     continue;
+            // }
             cnt += 1;
-            if sender.send(Message::Text(msg)).await.is_err() {
+            if sender.send(Message::Text(serde_json::to_string(&msg).unwrap())).await.is_err() {
                 println!("client {who} abruptly disconnected because we could not send message to it");
                 break;
             }
@@ -76,7 +88,12 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32, state: Arc
     });
 
     // This second task will receive messages from client and print them on server console
+    let state_clone = state.clone();
+    let user_id_clone = user_id.clone();
     let mut recv_task = tokio::spawn(async move {
+        let state = state_clone;
+        let username = username_clone;
+        let user_id = user_id_clone;
         let mut cnt = 0;
         loop {
             let msg = receiver.next().await.unwrap();
@@ -87,13 +104,32 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32, state: Arc
                 }
                 Ok(Message::Text(msg)) => {
                     cnt += 1;
-                    // if process_message(&msg, who).is_break() {
-                    //     break;
-                    // }
-                    // Broadcast the message to all other clients
-                    let mut chat_channels = state.chat_channels.lock().unwrap();
+                    // Deserialize the message and send it to the chat channel
+                    let msg: ChatMessage = serde_json::from_str(&msg).unwrap();
+
+                    let mut username = username.lock().await;
+                    let mut user_id = user_id.lock().await;
+                    if username.is_none() || user_id.is_none() {
+                        *username = Some(msg.username.clone());
+                        *user_id = Some(msg.user_id);
+                    }
+
+                    // Add it to db
+                    let mut conn = state.pool.get_conn().await.unwrap();
+                    conn.exec_drop(
+                        r"INSERT INTO ChatMessages (chatroom_id, sender_id, message_text, sent_at) VALUES (:chatroom_id, :sender_id, :message_text, :sent_at)",
+                        params! {
+                            "chatroom_id" => chat,
+                            "sender_id" => msg.user_id,
+                            "message_text" => msg.content.clone(),
+                            "sent_at" => msg.timestamp.to_string(),
+                        },
+                    ).await
+                    .expect("Could not insert message into db");
+
+                    let mut chat_channels = state.chat_channels.lock().await;
                     let tx = &chat_channels.get_mut(&chat).unwrap().0;
-                    tx.send((msg, who)).unwrap();
+                    tx.send(msg).unwrap();
                 }
                 Err(e) => {
                     println!("Client {who} abruptly disconnected due to {e}");
@@ -107,6 +143,21 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32, state: Arc
         }
         cnt
     });
+
+    // Join chat room
+    {
+        let mut chat_channels = state.chat_channels.lock().await;
+        let tx = &chat_channels.get_mut(&chat).unwrap().0;
+        let username = username.lock().await;
+        let user_id = user_id.lock().await;
+        tx.send(ChatMessage {
+            user_id: -1,
+            username: String::from("Server"),
+            content: format!("User {} (user_id: {}) joined the chat room", (*username).clone().unwrap_or_else(|| String::from("Unknown")), user_id.unwrap_or_else(|| -1)),
+            timestamp: chrono::Utc::now(),
+            // addr: who,
+        }).unwrap();
+    }
 
     // If any one of the tasks exit, abort the other.
     tokio::select! {
@@ -126,115 +177,35 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32, state: Arc
         }
     }
 
+    // Leave chat room
+    {
+        let mut chat_channels = state.chat_channels.lock().await;
+        let tx = &chat_channels.get_mut(&chat).unwrap().0;
+        let username = username.lock().await;
+        let user_id = user_id.lock().await;
+        tx.send(ChatMessage {
+            user_id: -1,
+            username: String::from("Server"),
+            content: format!("User {} (user_id: {}) left the chat room", (*username).clone().unwrap_or_else(|| String::from("Unknown")), user_id.unwrap_or_else(|| -1)),
+            timestamp: chrono::Utc::now(),
+            // addr: who,
+        }).unwrap();
 
+        // Call leave chat room api
+        let mut conn = state.pool.get_conn().await.unwrap();
+        conn.exec_drop(
+            r"DELETE FROM UserInChatRoom WHERE user_id = :user_id AND chatroom_id = :chatroom_id",
+            params! {
+                "user_id" => *user_id,
+                "chatroom_id" => chat,
+            },
+        ).await
+        .expect("Could not leave chat room");
+    }
 
-    // // send a ping (unsupported by some browsers) just to kick things off and get a response
-    // if socket.send(Message::Ping(vec![1, 2, 3])).await.is_ok() {
-    //     println!("Pinged {who}...");
-    // } else {
-    //     println!("Could not send ping {who}!");
-    //     // no Error here since the only thing we can do is to close the connection.
-    //     // If we can not send messages, there is no way to salvage the statemachine anyway.
-    //     return;
-    // }
-
-    // // receive single message from a client (we can either receive or send with socket).
-    // // this will likely be the Pong for our Ping or a hello message from client.
-    // // waiting for message from a client will block this task, but will not block other client's
-    // // connections.
-    // if let Some(msg) = socket.recv().await {
-    //     if let Ok(msg) = msg {
-    //         if process_message(msg, who).is_break() {
-    //             return;
-    //         }
-    //     } else {
-    //         println!("client {who} abruptly disconnected");
-    //         return;
-    //     }
-    // }
-
-    // // Since each client gets individual statemachine, we can pause handling
-    // // when necessary to wait for some external event (in this case illustrated by sleeping).
-    // // Waiting for this client to finish getting its greetings does not prevent other clients from
-    // // connecting to server and receiving their greetings.
-    // for i in 1..5 {
-    //     if socket
-    //         .send(Message::Text(format!("Hi {i} times!")))
-    //         .await
-    //         .is_err()
-    //     {
-    //         println!("client {who} abruptly disconnected");
-    //         return;
-    //     }
-    //     tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-    // }
-
-    // // By splitting socket we can send and receive at the same time. In this example we will send
-    // // unsolicited messages to client based on some sort of server's internal event (i.e .timer).
-    // let (mut sender, mut receiver) = socket.split();
-
-    // // Spawn a task that will push several messages to the client (does not matter what client does)
-    // let mut send_task = tokio::spawn(async move {
-    //     let n_msg = 20;
-    //     for i in 0..n_msg {
-    //         // In case of any websocket error, we exit.
-    //         if sender
-    //             .send(Message::Text(format!("Server message {i} ...")))
-    //             .await
-    //             .is_err()
-    //         {
-    //             return i;
-    //         }
-
-    //         tokio::time::sleep(std::time::Duration::from_millis(300)).await;
-    //     }
-
-    //     println!("Sending close to {who}...");
-    //     if let Err(e) = sender
-    //         .send(Message::Close(Some(CloseFrame {
-    //             code: axum::extract::ws::close_code::NORMAL,
-    //             reason: Cow::from("Goodbye"),
-    //         })))
-    //         .await
-    //     {
-    //         println!("Could not send Close due to {e}, probably it is ok?");
-    //     }
-    //     n_msg
-    // });
-
-    // // This second task will receive messages from client and print them on server console
-    // let mut recv_task = tokio::spawn(async move {
-    //     let mut cnt = 0;
-    //     while let Some(Ok(msg)) = receiver.next().await {
-    //         cnt += 1;
-    //         // print message and break if instructed to do so
-    //         if process_message(msg, who).is_break() {
-    //             break;
-    //         }
-    //     }
-    //     cnt
-    // });
-
-    // // If any one of the tasks exit, abort the other.
-    // tokio::select! {
-    //     rv_a = (&mut send_task) => {
-    //         match rv_a {
-    //             Ok(a) => println!("{a} messages sent to {who}"),
-    //             Err(a) => println!("Error sending messages {a:?}")
-    //         }
-    //         recv_task.abort();
-    //     },
-    //     rv_b = (&mut recv_task) => {
-    //         match rv_b {
-    //             Ok(b) => println!("Received {b} messages"),
-    //             Err(b) => println!("Error receiving messages {b:?}")
-    //         }
-    //         send_task.abort();
-    //     }
-    // }
 
     // returning from the handler closes the websocket connection
-    println!("Websocket context {who} destroyed");
+    println!("Websocket context {who} destroyed (user_id: {})", user_id.lock().await.unwrap_or_else(|| -1));
 }
 
 /// helper to print contents of messages to stdout. Has special treatment for Close.

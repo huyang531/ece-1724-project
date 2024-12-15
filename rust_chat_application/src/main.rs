@@ -2,39 +2,70 @@ use axum::{
     routing::{any, get, post},
     Router
 };
-use tokio::sync::broadcast;
+use serde::{Deserialize, Serialize};
+use tokio::sync::{broadcast, Mutex};
 use tower_http::{
-    cors::{CorsLayer, Any},
-    add_extension::AddExtensionLayer,
+    add_extension::AddExtensionLayer, cors::{Any, CorsLayer}, trace::{DefaultMakeSpan, TraceLayer}
 };
-use std::{collections::HashMap, net::SocketAddr, sync::{Arc, Mutex}};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use std::{collections::HashMap, net::SocketAddr, sync::Arc};
 use mysql_async::Pool;
+use chrono::{DateTime, Utc};
+
 use crate::database::initialize_database;
-mod handlers;
 use crate::handlers::chat_room_apis::*;
 use crate::handlers::user_auth_apis::*;
 use crate::handlers::websocket_handler::ws_handler;
+
+mod handlers;
 mod services;
 mod repository;
 mod database;
 
-pub type ChatChannels = Arc<Mutex<HashMap<i32, (broadcast::Sender<(String, SocketAddr)>, broadcast::Receiver<(String, SocketAddr)>)>>>;
+#[derive(Deserialize)]
+pub struct WsQuery {
+    user_id: i32,
+    username: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ChatMessage {
+    pub user_id: i32,            
+    pub username: String,
+    pub content: String,
+    pub timestamp: DateTime<Utc>,
+    // pub addr: SocketAddr,
+}
+
+pub type ChatChannels = Arc<Mutex<HashMap<i32, (broadcast::Sender<ChatMessage>, broadcast::Receiver<ChatMessage>)>>>;
 
 #[derive(Clone)]
 pub struct AppState {
     pub chat_channels: ChatChannels,
+    pub pool: Pool,
+    // pub usernames: Arc<Mutex<HashMap<SocketAddr, String>>>,
 }
 
 impl AppState {
     pub fn new() -> Self {
         AppState {
             chat_channels: Arc::new(Mutex::new(HashMap::new())),
+            pool: Pool::new("mysql://root:lyy@localhost/chat_app"),
+            // usernames: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 }
 
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+                format!("{}=debug,tower_http=debug", env!("CARGO_CRATE_NAME")).into()
+            }),
+        )
+        .with(tracing_subscriber::fmt::layer())
+        .init();
      // initilize the connection
      //url format: mysql://username:password@localhost/database_name
      //remember you also need to modify it at repository layer
@@ -59,6 +90,10 @@ async fn main() {
         .route("/ws/{chat}", any(ws_handler))
         .layer(AddExtensionLayer::new(AppState::new()))
         .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(DefaultMakeSpan::default().include_headers(true)),
+        )
+        .layer(
             CorsLayer::new()
                 .allow_origin(Any)
                 .allow_methods(Any)
@@ -66,9 +101,9 @@ async fn main() {
         );
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    println!("Server running on http://{}", addr);
-    
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    
+    tracing::debug!("Listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>()).await.unwrap();
 
 }
@@ -78,4 +113,12 @@ async fn root() -> &'static str {
     "Welcome to the Rust server!"
 }
 
+pub fn init() -> tracing_appender::non_blocking::WorkerGuard {
+    let (non_blocking, guard) = tracing_appender::non_blocking(std::io::stdout());
 
+    tracing_subscriber::fmt()
+        .with_writer(non_blocking)
+        .init();
+
+    guard
+}
