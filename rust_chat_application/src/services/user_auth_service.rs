@@ -47,9 +47,9 @@ impl UserAuthService {
         self.repository.user_query(&email, &password_hash).await
     }
 
-    pub async fn user_login(&self, user_id: i32) -> Result<(), String> {
-        self.repository.user_login(user_id).await
-    }
+    // pub async fn user_login(&self, user_id: i32) -> Result<(), String> {
+    //     self.repository.user_login(user_id).await
+    // }
 
     pub async fn user_logout(&self, user_id: i32) -> Result<(), String> {
         self.repository.user_logout(user_id).await
