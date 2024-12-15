@@ -31,7 +31,7 @@ trunk serve
 
 # TOOD
 
-- ChatRoom session (how to disconnect websocket when going back to the Home Screen, equivalence of use_effect_with()?)
 - Show Room ID in ChatRoom
 - Show Chat history when user joined Chat Room
-- Add back button
+- Add back/close button to explicitly leave Chat Room
+- Support refreshing in Chat Room page (instead of navigating to Home)
