@@ -18,8 +18,11 @@ pub fn Home() -> Html {
     // Fetch login status from session storage
     let auth_ctx = use_context::<Rc<AuthContext>>().expect("Could not find AuthContext");
     let auth_token = auth::load_auth_token();
+    log::debug!("Auth token: {:?}", auth_token);
     if let Some(token) = auth_token {
+        log::debug!("Auth token found");
         if !auth_ctx.state.is_authenticated {
+            log::debug!("Auth token found and user is not authenticated");
             // Set the auth context with the loaded token
             auth_ctx.login.emit(token);
         }
@@ -153,7 +156,7 @@ pub fn Home() -> Html {
                     log::info!("Logout successful");
                     auth_ctx_clone.logout.emit(());
                     window().unwrap().alert_with_message("Logout successful").unwrap();
-                    storage.remove_item("user_id").unwrap();
+                    storage.remove_item("user_token").unwrap();
                     navigator.push(&Route::Login);
                 }
                 Err(err) => {

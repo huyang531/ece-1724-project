@@ -6,9 +6,9 @@ use crate::{config, types::auth::*};
 use serde_wasm_bindgen::from_value;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-struct Token {
-    user_id: i32,
-    username: String,
+pub struct Token {
+    pub user_id: i32,
+    pub username: String,
 }
 
 pub async fn login(email: String, password: String) -> Result<LoginResponse, String> {
@@ -132,9 +132,13 @@ pub fn load_auth_token() -> Option<(i32, String)> {
  
     match storage.get_item("user_token") {
         Ok(Some(token)) => {
+            log::debug!("In load_auth_token(): Token: {:?}", token);
             let token: Token = serde_json::from_str(&token).expect("Failed to parse token");
             Some((token.user_id, token.username))
         }
-        _ => None,
+        _ => {
+            log::debug!("In load_auth_token(): No token found");
+            None
+        }
     }
 }

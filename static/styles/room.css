@@ -35,6 +35,30 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    overflow-y: auto; /* Make the messages list scrollable */
+}
+
+.message {
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem;
+    background: #e1e1e1;
+    border-radius: 4px;
+}
+
+.timestamp {
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 0.2rem;
+}
+
+.username {
+    font-weight: bold;
+    margin-bottom: 0.2rem;
+}
+
+.content {
+    font-size: 1rem;
 }
 
 .send-message-box {

@@ -28,3 +28,8 @@ cargo install --locked trunk
 ```sh
 trunk serve
 ```
+
+# TOOD
+
+- Show Room ID in ChatRoom
+- Fix sending/receiving message

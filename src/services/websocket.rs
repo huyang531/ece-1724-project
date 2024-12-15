@@ -80,9 +80,9 @@ impl WebSocketService {
                         let msg = serde_json::from_str::<ChatMessage>(&msg.into_text().unwrap()).unwrap();
                         on_message.emit(msg);
                     }
-                };
+                }
                 log::debug!("WebSocketService: receiver_lock released, starting next iter...");
-            };
+            }
         });
 
         log::debug!("WebSocketService new() finished");

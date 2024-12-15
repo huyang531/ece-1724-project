@@ -6,6 +6,7 @@ use web_sys::HtmlInputElement;
 use web_sys::window;
 use wasm_bindgen::JsCast;
 use crate::Route;
+use crate::services::auth::Token;
 use crate::components::layout::Header;
 use crate::services::auth;
 use crate::context::auth::AuthContext;
@@ -38,10 +39,16 @@ pub fn Login() -> Html {
             spawn_local(async move {
                 match auth::login(email, password).await {
                     Ok(response) => {
+                        let token = Token {
+                            user_id: response.uid,
+                            username: response.username.clone(),
+                        };
                         auth_ctx.login.emit((response.uid, response.username));
                         log::info!("Login successful");
                         window().unwrap().alert_with_message("Login successful").unwrap();
-                        storage.set_item("user_id", &response.uid.to_string()).unwrap(); 
+                        let token = serde_json::to_string(&token).unwrap();
+                        log::debug!("user_token: {}", token);
+                        storage.set_item("user_token", &token).unwrap();
                         navigator.push(&Route::Home);
                     }
                     Err(err) => {

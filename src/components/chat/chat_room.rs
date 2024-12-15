@@ -61,7 +61,7 @@ impl Component for ChatRoom {
         let link = ctx.link().clone();
         let on_message = link.callback(Msg::ReceiveMessage);
         let wss = WebSocketService::new(
-            &format!("{}{}", config::WS_BASE_URL, ctx.props().id),
+            &format!("{}{}?user_id={}&username={}", config::WS_BASE_URL, ctx.props().id, auth_ctx.state.user_id.unwrap(), auth_ctx.state.username.clone().unwrap()),
             auth_ctx.state.user_id.unwrap(),
             auth_ctx.state.username.clone().unwrap(),
             on_message,
@@ -163,8 +163,9 @@ impl Component for ChatRoom {
                             for self.messages.iter().map(|msg| {
                                 html! {
                                     <div class="message">
-                                        <span class="username">{&msg.username}</span>
-                                        <span class="content">{&msg.content}</span>
+                                        <span class="username">{ &msg.username }</span>
+                                        <span class="timestamp">{ format!("{} UTC", msg.timestamp.format("%Y-%m-%d %H:%M:%S").to_string()) }</span>
+                                        <span class="content">{ &msg.content }</span>
                                     </div>
                                 }
                             })
