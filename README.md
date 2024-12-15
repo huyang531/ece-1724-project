@@ -29,7 +29,7 @@ Then, we can try communicate with the server using `wscat`, for example:
 
 ```sh
 npm install -g wscat
-wscat -c ws://localhost:3000/ws/1
+wscat -c ws://localhost:3000/ws/1\?username=test\&user_id=99
 ```
 
 ## Run Example WS Application

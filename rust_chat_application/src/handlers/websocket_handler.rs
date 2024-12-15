@@ -46,6 +46,9 @@ pub async fn ws_handler(
         String::from("Unknown browser")
     };
     tracing::info!("`{user_agent}` at {addr} connected.");
+
+    // TODO: check if user has logged in yet.
+    
     // finalize the upgrade process by returning upgrade callback.
     // we can customize the callback by sending additional info such as address.
     ws.on_upgrade(move |socket| handle_socket(socket, addr, chat, state, query.user_id, query.username.clone()))
