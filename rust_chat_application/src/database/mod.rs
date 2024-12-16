@@ -5,7 +5,7 @@ pub async fn initialize_database(pool: &Pool) -> Result<(), String> {
     let mut conn = pool.get_conn().await.map_err(|e| e.to_string())?;
 
     // delete current exist table
-    drop_tables(&mut conn).await?;
+    // drop_tables(&mut conn).await?;
 
     // create a new one
     create_users_table(&mut conn).await?;
@@ -16,6 +16,7 @@ pub async fn initialize_database(pool: &Pool) -> Result<(), String> {
     Ok(())
 }
 // delete table
+#[allow(dead_code)]
 async fn drop_tables(conn: &mut Conn) -> Result<(), String> {
     // check the dependency
     conn.query_drop("DROP TABLE IF EXISTS UserInChatRoom")

@@ -20,14 +20,3 @@ reqwasm = "0.5.0"
 futures = "0.3.17"
 chrono = { version = "0.4.39", features = ["serde"] }
 tokio-tungstenite-wasm = "0.4.0"
-
-# WebSocket libs
-# tracing = "0.1"
-# tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-# headers = "0.4"
-# tokio = { version = "1", features = ["full"] }
-# tokio-tungstenite = "0.24.0"
-# tungstenite = "0.24.0"
-# futures = "0.3"
-# futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
-# tower-http = { version = "0.6.2", features = ["cors", "fs", "trace", "add-extension"] }
