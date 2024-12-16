@@ -55,7 +55,7 @@ impl WebSocketService {
             let receiver = receiver_clone;
             loop {
                 if cancel_clone.load(Ordering::SeqCst) {
-                    log::warn!("WebSocketService: cancellation signal received, killing WebSocketService...");
+                    log::debug!("WebSocketService: cancellation signal received, killing WebSocketService...");
                     break;
                 }
                         
@@ -74,7 +74,7 @@ impl WebSocketService {
                 futures::select! {
                     cancel = cancel_fut => {
                         if cancel {
-                            log::warn!("WebSocketService: cancellation signal received, exiting...");
+                            log::debug!("WebSocketService: cancellation signal received, exiting...");
                             return;
                         }
                     },
