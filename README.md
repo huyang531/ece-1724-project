@@ -60,3 +60,11 @@ For example, we can communicate with the server using `wscat`:
 npm install -g wscat
 wscat -c ws://localhost:3011/ws/1
 ```
+
+
+### Contributions by Each Team Member
+|Worker | Contributions|
+|-------------|---------------------|
+|Yingying Liu|user authication APIs|
+|Yang Hu |Frontend + Message module + Websocket|
+|Ze Yang |database design + ChatRoom funcations|
