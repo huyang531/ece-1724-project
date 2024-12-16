@@ -3,7 +3,7 @@
 # List of ports to check and kill processes for
 PORTS=(
 3000
-3011
+8080
 )
 
 for PORT in "${PORTS[@]}"; do
