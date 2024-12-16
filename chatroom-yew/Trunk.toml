@@ -1,0 +1,14 @@
+[serve]
+# The address to serve on LAN.
+addresses = ["127.0.0.1"]
+# The port to serve on.
+port = 8000
+
+[build]
+target = "index.html"
+dist = "dist"
+
+[[hooks]]
+stage = "build"
+command = "cp"
+command_arguments = ["-r", "static", "dist/"]
