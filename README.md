@@ -106,7 +106,7 @@ cd ece-1724-project
 
 ### Clear the Ports
 
-By default, the backend application binds to port `3000` and the frontend application binds to port `8080`.
+By default, the backend application binds to port `3000` and the frontend application binds to port `8000`.
 If you have existing applications running on these ports, you need to kill them before running RustChat.
 If you are running on a Unix-like system and are comfortable killing the processes running on these ports, you may do so by running this handly script:
 
@@ -144,7 +144,9 @@ If you are running on a Unix-like system and are comfortable killing the process
 
 ## User's Guide
 
-Once the backend are frontend servers are running, you may access the frontend at http://localhost:8080 via your browser.
+Once the backend are frontend servers are running, you may access the frontend at http://localhost:8000 via your browser.
+
+
 
 ### User Authentication
 

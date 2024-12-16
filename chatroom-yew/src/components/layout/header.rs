@@ -13,17 +13,11 @@ pub fn Header() -> Html {
                 {"RustChat"}
             </Link<Route>>
             <h4>{{
-                let user_id = match &auth_ctx.state.user_id {
-                    Some(user_id) => user_id.to_string(),
-                    None => "Unknown".to_string(),
-                };
-
-                let username = match &auth_ctx.state.username {
-                    Some(username) => username,
-                    None => "Unknown",
-                };
-
-                format!("Welcome, {}! (ID: {})", username, user_id)
+                if let Some(user_id) = &auth_ctx.state.user_id {
+                    format!("Welcome, {}! (ID: {})", auth_ctx.state.username.as_ref().unwrap_or(&"Unknown".to_string()), user_id)
+                } else {
+                    "Welcome, please log in!".to_string()
+                }
             }}</h4>
         </header>
     }
