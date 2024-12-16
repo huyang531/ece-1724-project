@@ -93,7 +93,7 @@ cd ece-1724-project
     If that is not the case for you, please change the password using the following command:
     
     ```sql
-    mysql> ALTER USER 'root'@'localhost' IDENTIFIED BY 'new_password';
+    mysql> ALTER USER 'root'@'localhost' IDENTIFIED BY 'root';
     ```
 
 1. Create the `chat_app` database
@@ -156,9 +156,9 @@ Once the backend are frontend servers are running, you may access the frontend a
 ## Contributions by Each Team Member
 |Worker | Contribution|
 |-------------|---------------------|
-|Yingying Liu |User Authentication APIs|
-|Yang Hu|Frontend + Message Module + Websocket|
-|Ze Yang |Database + Chatroom Functions + Backend Architecture|
+|Yingying Liu |Implemented the User Authentication APIs at the backend|
+|Yang Hu|Implemented the Frontend using Yew and the Messaging Module using Websocket|
+|Ze Yang |Designed the software architecture, database schemas, and APIs; Implemented Chat-Room-related APIs at the backend|
 
 ## Lessons Learned and Concluding Remarks
 Don't be a last-time person.
