@@ -67,4 +67,4 @@ wscat -c ws://localhost:3011/ws/1
 |-------------|---------------------|
 |Yingying Liu|User Authication APIs|
 |Yang Hu |Frontend + Message Module + Websocket|
-|Ze Yang |Database + ChatRoom Function|
+|Ze Yang |Database + Chatroom Functions|
