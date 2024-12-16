@@ -74,7 +74,7 @@ async fn main() {
      // initilize the connection
      //url format: mysql://username:password@localhost/database_name
      //remember you also need to modify it at repository layer
-     let database_url = "mysql://root:lyy@localhost/chat_app";
+     let database_url = "mysql://root:root@localhost/chat_app";
      let pool = Pool::new(database_url);
  
      // initilize the database
