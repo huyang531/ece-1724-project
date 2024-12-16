@@ -71,7 +71,7 @@ wscat -c ws://localhost:3011/ws/1
 ## Contributions by Each Team Member
 |Worker | Contribution|
 |-------------|---------------------|
-|Yingying Liu 1005836794|User Authentication APIs|
+|Yingying Liu 1008325974|User Authentication APIs|
 |Yang Hu 1005836794|Frontend + Message Module + Websocket|
 |Ze Yang 1010007145|Database + Chatroom Functions + Backend Architecture|
 
