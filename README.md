@@ -1,4 +1,10 @@
 # ece-1724-project
+##Motivation
+Building a real-time chat application with Rust is driven by its exceptional performance, safety, and scalability. Rust delivers C and C++-like performance, making it ideal for efficiently managing numerous simultaneous WebSocket connections, a critical aspect of real-time communication. Its memory safety model, which operates without a garbage collector, ensures smooth and predictable performance—essential for maintaining responsiveness in such applications. Rust’s ownership and borrowing system further enhances safe concurrency, eliminating risks like race conditions and data corruption when handling multiple users and chat rooms. The async/await model provides robust asynchronous support, enabling the backend to scale seamlessly and manage thousands of concurrent users without system bottlenecks. Leveraging libraries like Tokio for asynchronous programming and WebSocket crates simplifies the development of high-performance chat systems. Rust’s full-stack potential is also unlocked through frameworks like Yew for front-end development, ensuring a unified and consistent codebase. These strengths—high performance, safe concurrency, scalability, and a rich ecosystem—make Rust a compelling choice for building a reliable and scalable real-time chat application that prioritizes raw performance.
+ 
+##Objectives & Features
+Create and implement a high-performance, scalable real-time chat application designed for instant messaging and seamless user interaction. The core features include basic user authentication, the ability to create and join chat rooms, and real-time communication powered by WebSockets for efficient data transmission. The application will also incorporate presence detection, enabling users to view who joined the chatroom and view the chat history. A straightforward front-end interface, implemented using a yew framework, will allow users to interact with the chat system. The primary focus will be on optimizing performance and ensuring the application scales effectively to handle growing user demand.
+
 
 ## Run RustChat Application
 
@@ -62,7 +68,7 @@ wscat -c ws://localhost:3011/ws/1
 ```
 
 
-### Contributions by Each Team Member
+## Contributions by Each Team Member
 |Worker | Contribution|
 |-------------|---------------------|
 |Yingying Liu|User Authication APIs|
