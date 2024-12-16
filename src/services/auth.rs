@@ -2,8 +2,9 @@ use serde::{Deserialize, Serialize};
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{window, Request, RequestInit, RequestMode, Response};
-use crate::{config, types::auth::*};
 use serde_wasm_bindgen::from_value;
+
+use crate::{config, types::auth::*};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Token {
@@ -100,7 +101,6 @@ pub async fn logout(user_id: i32) -> Result<(), String> {
     opts.set_method("POST");
     opts.set_mode(RequestMode::Cors);
     opts.set_body(Some(&JsValue::from_str(&serde_json::to_string(&logout_request).unwrap())).unwrap());
-    // opts.set_body(JsValue::from_str(format!("{{\"user_id\": {}}}", user_id).as_str()).as_ref());
 
     let url = format!("{}{}", config::API_BASE_URL, config::Endpoints::LOGOUT);
     let request = Request::new_with_str_and_init(&url, &opts).unwrap();

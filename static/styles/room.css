@@ -12,7 +12,7 @@
     height: calc(100vh - 7rem); /* Adjust height to take up the entire screen minus the header */
     width: calc(100% - 2rem); /* Adjust width to prevent overflow */
     padding: 1rem;
-    margin: 2rem auto;
+    /* margin: 2rem auto; */
     margin-top: 5rem;
     background: #d6d6d6;
     border-radius: 8px;
@@ -28,6 +28,33 @@
     padding: 1rem;
     overflow-y: auto;
     margin-bottom: 1rem;
+}
+
+.room-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    /* padding: 10px; */
+}
+
+.back-button {
+    position: fixed;
+    top: 0px;
+    right: 10px;
+    padding: 5px 10px;
+    font-size: 1em;
+    background-color: #ff0000; /* Red color */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 7rem;
+    min-width: 70px;
+    min-height: 40px;
+}
+
+.back-button:hover {
+    background-color: #cc0000; /* Darker red on hover */
 }
 
 .messages {

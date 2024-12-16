@@ -28,10 +28,3 @@ cargo install --locked trunk
 ```sh
 trunk serve
 ```
-
-# TOOD
-
-- Show Room ID in ChatRoom
-- Show Chat history when user joined Chat Room
-- Add back/close button to explicitly leave Chat Room
-- Support refreshing in Chat Room page (instead of navigating to Home)

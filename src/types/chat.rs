@@ -8,5 +8,4 @@ pub struct ChatMessage {
     pub username: String,
     pub content: String,
     pub timestamp: DateTime<Utc>,
-    // pub addr: SocketAddr,
 }

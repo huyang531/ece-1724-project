@@ -5,13 +5,12 @@ use web_sys::window;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew_router::prelude::*;
+
 use crate::services::chat_room;
 use crate::Route;
 use crate::components::layout::Header;
 use crate::context::auth::AuthContext;
 use crate::services::auth;
-
-
 
 #[function_component]
 pub fn Home() -> Html {
@@ -38,33 +37,6 @@ pub fn Home() -> Html {
             is_logged_in.set(value.clone());
         });
     }
-
-    // // Improvement: Call logout API when the session terminates
-    // {
-    //     let auth_ctx = auth_ctx.clone();
-    //     use_effect(move || {
-    //         let window = window().unwrap();
-    //         let storage = window.session_storage().unwrap().unwrap();
-    //         let user_id = auth_ctx.state.user_id.clone();
-
-    //         // Cleanup function to call logout API
-    //         move || {
-    //             if let Some(user_id) = user_id {
-    //                 spawn_local(async move {
-    //                     match auth::logout(user_id).await {
-    //                         Ok(_) => {
-    //                             log::info!("Logout successful");
-    //                             storage.remove_item("user_id").unwrap();
-    //                         }
-    //                         Err(err) => {
-    //                             log::error!("Logout error: {:?}", err);
-    //                         }
-    //                     }
-    //                 });
-    //             }
-    //         }
-    //     });
-    // }
 
     let navigator = use_navigator().unwrap();
     let navigator_clone = navigator.clone();

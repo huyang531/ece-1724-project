@@ -1,8 +1,9 @@
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Request, RequestInit, RequestMode, Response};
-use crate::{config, types::chat_room::*};
 use serde_wasm_bindgen::from_value;
+
+use crate::{config, types::chat_room::*};
 
 pub async fn create_chat_room(user_id: i32, room_name: String) -> Result<CreateChatRoomResponse, String> {
     log::debug!("Creating chat room with name: {}", room_name);
@@ -23,16 +24,6 @@ pub async fn create_chat_room(user_id: i32, room_name: String) -> Result<CreateC
         .await
         .map_err(|err| err.as_string().unwrap_or_else(|| "Request failed. Is server started?".to_string()))?;
     let resp = resp_value.dyn_into::<Response>().unwrap();
-
-    // match resp.status() {
-    //     401 => {
-    //         return Err("Unauthorized".to_string());
-    //     }
-    //     500 => {
-    //         return Err("Internal server error. Please try logging in again!".to_string());
-    //     }
-    //     _ => {}
-    // }
 
     let json = JsFuture::from(resp.json().unwrap())
         .await
@@ -77,16 +68,8 @@ pub async fn join_chat_room(user_id: i32, room_id: i32) -> Result<JoinChatRoomRe
         404 => {
             return Err("Room not found".to_string());
         }
-        // 401 => {
-        //     return Err("Unauthorized".to_string());
-        // }
-        // 500 => {
-        //     return Err("Internal server error. Please try logging in again!".to_string());
-        // }
         _ => {}
     }
-
-    // log::debug!("Response json: {:?}", resp.json().unwrap().as_string().unwrap());
 
     let json = JsFuture::from(resp.json().unwrap())
         .await

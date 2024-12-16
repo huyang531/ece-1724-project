@@ -3,6 +3,7 @@ use web_sys::{window, HtmlInputElement};
 use yew::prelude::*;
 use yew_router::prelude::*;
 use yew::platform::spawn_local;
+
 use crate::Route;
 use crate::components::layout::Header;
 use crate::services::auth;
@@ -146,12 +147,12 @@ pub fn SignUp() -> Html {
                 <Link<Route> to={Route::Login}>{"Already have an account? Login"}</Link<Route>>
             </div>
             if let Some(error_message) = (*error).clone() {
-                        <div class="error-popup">
-                            <div class="error-content">
-                                <p>{error_message}</p>
-                                <button onclick={on_close_error}>{"Close"}</button>
-                            </div>
-                        </div>
+                <div class="error-popup">
+                    <div class="error-content">
+                        <p>{error_message}</p>
+                        <button onclick={on_close_error}>{"Close"}</button>
+                    </div>
+                </div>
             }
         </div>
     </>

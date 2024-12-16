@@ -1,4 +1,3 @@
-// src/context/auth.rs
 use std::rc::Rc;
 use yew::prelude::*;
 
@@ -67,11 +66,3 @@ pub fn AuthProvider(props: &AuthProviderProps) -> Html {
         </ContextProvider<Rc<AuthContext>>>
     }
 }
-
-// fn get_user_id() -> String {
-//     use crate::context::auth::AuthContext;
-//     use yew::prelude::*;
-
-//     let auth_ctx = use_context::<Rc<AuthContext>>().expect("Could not find AuthContext");
-//     auth_ctx.state.user_id.clone().unwrap_or_else(|| "".to_string())
-// }

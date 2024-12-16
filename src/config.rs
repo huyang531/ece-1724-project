@@ -1,4 +1,3 @@
-// src/config.rs
 pub const API_BASE_URL: &str = "http://localhost:3000";
 pub const WS_BASE_URL: &str = "ws://localhost:3000/ws/";
 

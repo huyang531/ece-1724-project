@@ -1,10 +1,12 @@
 use std::rc::Rc;
+
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use web_sys::HtmlInputElement;
 use web_sys::window;
 use wasm_bindgen::JsCast;
+
 use crate::Route;
 use crate::services::auth::Token;
 use crate::components::layout::Header;
@@ -55,7 +57,6 @@ pub fn Login() -> Html {
                         log::error!("Login error: {:?}", err);
                         // Show a popup that displays the error message
                         error.set(Some(err));
-                        // window().unwrap().alert_with_message(&err).unwrap();
                     }
                 }
             });
@@ -108,12 +109,12 @@ pub fn Login() -> Html {
                     <Link<Route> to={Route::SignUp}>{"Don't have an account? Sign up"}</Link<Route>>
                 </div>
                 if let Some(error_message) = (*error).clone() {
-                        <div class="error-popup">
-                            <div class="error-content">
-                                <p>{error_message}</p>
-                                <button onclick={on_close_error}>{"Close"}</button>
-                            </div>
+                    <div class="error-popup">
+                        <div class="error-content">
+                            <p>{error_message}</p>
+                            <button onclick={on_close_error}>{"Close"}</button>
                         </div>
+                    </div>
                 }
             </div>
         </>

@@ -1,8 +1,10 @@
 use std::{sync::{atomic::{AtomicBool, Ordering}, Arc}, time::Duration};
+
 use futures::{lock::Mutex, pin_mut, stream::{SplitSink, SplitStream}, FutureExt, SinkExt, StreamExt};
 use wasm_bindgen_futures::spawn_local;
 use tokio_tungstenite_wasm::{connect, WebSocketStream, Message};
 use yew::{platform::time::sleep, Callback};
+
 use crate::types::chat::ChatMessage;
 
 pub struct WebSocketService {

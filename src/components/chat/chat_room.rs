@@ -11,29 +11,25 @@ use crate::context::auth::AuthContext;
 use crate::services::websocket::WebSocketService;
 use crate::types::chat::ChatMessage;
 use crate::components::layout::Header;
-use crate::services::auth;
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
     pub id: String,
-    // pub name: String,
 }
 
 pub struct ChatRoom
 {
     messages: Vec<ChatMessage>,
     wss: Arc<Mutex<Option<WebSocketService>>>,
-    // link: ComponentLink<Self>,
     current_message: String,
     is_authenticated: bool,
-    // auth_ctx: ContextHandle<AuthContext>,
 }
 
 pub enum Msg {
     SendMessage,
     UpdateMessage(String),
     ReceiveMessage(ChatMessage),
-    AuthContextHandler(Rc<AuthContext>),
+    LeaveRoom,
 }
 
 
@@ -42,25 +38,10 @@ impl Component for ChatRoom {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
-        // let (auth_ctx, _) = ctx.link().context(ctx.link().callback(Msg::AuthContextHandler)).unwrap();
         log::debug!("ChatRoom create() called");
-        let on_auth = ctx.link().callback(Msg::AuthContextHandler);
-        let (auth_ctx, _) = ctx.link().context::<Rc<AuthContext>>(on_auth).unwrap();
+        let (auth_ctx, _) = ctx.link().context::<Rc<AuthContext>>(Callback::noop()).unwrap();
 
-        let auth_token = auth::load_auth_token();
-        log::debug!("Auth token: {:?}", auth_token);
-        if let Some(token) = auth_token {
-            log::debug!("Auth token found: {:?}", token);
-            if !auth_ctx.state.is_authenticated {
-                log::debug!("Auth token found and user is not authenticated");
-                // Set the auth context with the loaded token
-                auth_ctx.login.emit(token);
-            }
-        }
-
-        log::debug!("ChatRoom create() auth_ctx: {:?}", auth_ctx);
         let is_authenticated = auth_ctx.state.is_authenticated;
-        log::debug!("ChatRoom create() is_authenticated: {:?}", is_authenticated);
         
         if !is_authenticated {
             return Self {
@@ -73,7 +54,6 @@ impl Component for ChatRoom {
 
         let link = ctx.link().clone();
         let on_message = link.callback(Msg::ReceiveMessage);
-
 
         let wss = WebSocketService::new(
             &format!("{}{}?user_id={}&username={}", config::WS_BASE_URL, ctx.props().id, auth_ctx.state.user_id.unwrap(), auth_ctx.state.username.clone().unwrap()),
@@ -92,7 +72,7 @@ impl Component for ChatRoom {
     }
 
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         let wss_clone = self.wss.clone();
         let message_clone = self.current_message.clone();
         match msg {
@@ -107,15 +87,14 @@ impl Component for ChatRoom {
                                 return;
                             }
                             log::debug!("Calling wss.send_message()...");
-                                match wss.send_message(&message_clone).await {
-                                    Some(err) => {
-                                        log::error!("Error sending message: {:?}", err);
-                                    }
-                                    None => {
-                                        log::debug!("Message sent successfully");
-                                    }
+                            match wss.send_message(&message_clone).await {
+                                Some(err) => {
+                                    log::error!("Error sending message: {:?}", err);
                                 }
-                            log::debug!("Returning true...");
+                                None => {
+                                    log::debug!("Message sent successfully");
+                                }
+                            }
                         }
                         None => {
                             log::error!("WebSocket connection not established");
@@ -133,9 +112,10 @@ impl Component for ChatRoom {
                 self.messages.push(msg);
                 true
             }
-            Msg::AuthContextHandler(auth_ctx) => {
-                self.is_authenticated = auth_ctx.state.is_authenticated;
-                true
+            Msg::LeaveRoom => {
+                log::debug!("Msg::LeaveRoom received");
+                ctx.link().navigator().unwrap().push(&Route::Home);
+                false
             }
         }
     }
@@ -143,7 +123,7 @@ impl Component for ChatRoom {
     fn view(&self, ctx: &Context<Self>) -> Html {
         // Check if user is logged in yet
         if !self.is_authenticated {
-            ctx.link().navigator().unwrap().push(&Route::Home);
+            // ctx.link().navigator().unwrap().push(&Route::Home);
             return html! {
                 <>
                     <Header />
@@ -154,16 +134,21 @@ impl Component for ChatRoom {
             };
         }
 
-        let onsubmit = ctx.link().callback(|e: SubmitEvent| {
+        let on_submit = ctx.link().callback(|e: SubmitEvent| {
             e.prevent_default();
             log::debug!("Send message button clicked");
             Msg::SendMessage
         });
 
-        let oninput = ctx.link().callback(|e: InputEvent| {
+        let on_input = ctx.link().callback(|e: InputEvent| {
             let input = e.target_unchecked_into::<web_sys::HtmlInputElement>();
             log::debug!("Input event: {:?}", input.value());
             Msg::UpdateMessage(input.value())
+        });
+
+        let on_back = ctx.link().callback(|_: MouseEvent| {
+            log::debug!("Back button clicked");
+            Msg::LeaveRoom
         });
         
     
@@ -171,8 +156,13 @@ impl Component for ChatRoom {
             <>
                 <Header />
                 <div class="chat-room-container">
+                    <div class="room-info">
+                        <h2>{ format!("Room ID: {}", ctx.props().id) }</h2>
+                        <button class="back-button" onclick={on_back}>{"Leave"}</button>
+                    </div>
                     <div class="chat-window">
                         <div class="messages">
+                        // Messages will be displayed here
                         {
                             for self.messages.iter().map(|msg| {
                                 html! {
@@ -184,16 +174,15 @@ impl Component for ChatRoom {
                                 }
                             })
                         }
-                            // Messages will be displayed here
                         </div>
                     </div>
-                    <form class="send-message-box" onsubmit={onsubmit}>
+                    <form class="send-message-box" onsubmit={on_submit}>
                         <input
                             type="text"
                             placeholder="Type your message..."
                             class="message-input"
                             value={self.current_message.clone()}
-                            oninput={oninput}
+                            oninput={on_input}
                         />
                         <button type="submit" class="send-button">{"Send"}</button>
                     </form>
@@ -201,14 +190,4 @@ impl Component for ChatRoom {
             </>
         }
     }
-
-    // fn destroy(&mut self, _ctx: &Context<Self>) {
-    //     log::debug!("ChatRoom destroy() called");
-    //     let wss_clone = self.wss.clone();
-    //     spawn_local(async move {
-    //         if let Some(wss) = wss_clone.lock().await.as_mut() {
-    //             wss.close();
-    //         }
-    //     });
-    // } 
 }
