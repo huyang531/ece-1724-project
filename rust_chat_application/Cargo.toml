@@ -4,11 +4,21 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-axum = "0.7"
+axum = { version = "0.8.0-alpha.1", features = ["ws"] }
+axum-extra = { version = "0.10.0-alpha.1", features = ["typed-header"]}
 tokio = { version = "1", features = ["full"] }
 mysql_async = "0.30.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 lazy_static = "1.4"
-chrono = "0.4"
-tower-http = { version = "0.6.2" ,features =["cors"]}
+chrono = { version = "0.4.39", features = ["serde"] }
+
+# WebSocket libs
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-appender = "0.2.3"
+headers = "0.4"
+tokio-tungstenite = "0.24.0"
+futures = "0.3"
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+tower-http = { version = "0.6.2", features = ["cors", "fs", "trace", "add-extension"] }

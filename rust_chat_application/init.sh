@@ -11,10 +11,11 @@ create_chat_room() {
     echo
 }
 
-# Create 3 users
-curl -H "Content-Type: application/json" -d "{\"username\":\"World\",\"email\":\"lll@gmail.com\",\"password\":\"11111\"}" http://127.0.0.1:3000/api/user/signup
-curl -H "Content-Type: application/json" -d "{\"username\":\"Hello\",\"email\":\"yyy@gmail.com\",\"password\":\"11111\"}" http://127.0.0.1:3000/api/user/signup
-curl -H "Content-Type: application/json" -d "{\"username\":\"Hey..\",\"email\":\"zzz@gmail.com\",\"password\":\"11111\"}" http://127.0.0.1:3000/api/user/signup
+# Create 4 users
+curl -H "Content-Type: application/json" -d "{\"username\":\"Alice\",\"email\":\"alice@gmail.com\",\"password\":\"11111\"}" http://127.0.0.1:3000/api/user/signup
+curl -H "Content-Type: application/json" -d "{\"username\":\"Bob\",\"email\":\"bob@gmail.com\",\"password\":\"11111\"}" http://127.0.0.1:3000/api/user/signup
+curl -H "Content-Type: application/json" -d "{\"username\":\"Carol\",\"email\":\"carol@gmail.com\",\"password\":\"11111\"}" http://127.0.0.1:3000/api/user/signup
+curl -H "Content-Type: application/json" -d "{\"username\":\"Yves\",\"email\":\"yves@gmail.com\",\"password\":\"11111\"}" http://127.0.0.1:3000/api/user/signup
 
 # Create 3 Chat Rooms
 create_chat_room 1 "ChatRoom1"

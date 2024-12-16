@@ -1,0 +1,21 @@
+// {
+//     "version": "2.0.0",
+//     "tasks": [
+//         {
+//             "label": "cd and build",
+//             "type": "shell",
+//             "command": "cargo build",
+//             // "options": {
+//             //     "cwd": "${workspaceFolder}/rust_chat_application"
+//             // },
+//             // "problemMatcher": [
+//             //     "$rustc"
+//             // ],
+//             // "group": {
+//             //     "kind": "build",
+//             //     "isDefault": true
+//             // },
+//             "detail": "Change to the rust_chat_application directory and run cargo build"
+//         }
+//     ]
+// }

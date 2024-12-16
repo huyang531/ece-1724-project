@@ -6,7 +6,7 @@ pub struct ChatRoomRepository {
 
 impl ChatRoomRepository {
     pub fn new() -> Self {
-        let database_url = "mysql://root:lyy@localhost/chat_app";
+        let database_url = "mysql://root:root@localhost/chat_app";
         let pool = Pool::new(database_url);
         ChatRoomRepository { pool }
     }
@@ -22,6 +22,7 @@ impl ChatRoomRepository {
         )
         .await
         .map_err(|e| e.to_string())?;
+
         // Then query the newly created room using room_name and created_by
         let room_id: Option<i32> = conn
             .exec_first(
@@ -39,6 +40,7 @@ impl ChatRoomRepository {
             
         room_id.ok_or_else(|| "Failed to get room ID".to_string())
     }
+
     pub async fn get_room_name(&self, chatroom_id: i32) -> Result<String, String> {
         let mut conn = self.pool.get_conn().await.map_err(|e| e.to_string())?;
         
@@ -54,6 +56,7 @@ impl ChatRoomRepository {
         
         room_name.ok_or_else(|| "Room not found".to_string())
     }
+    
     pub async fn does_room_exist(&self, chatroom_id: i32) -> Result<bool, String> {
         let mut conn = self.pool.get_conn().await.map_err(|e| e.to_string())?;
         
