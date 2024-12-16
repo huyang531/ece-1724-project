@@ -47,18 +47,14 @@ impl UserAuthService {
         self.repository.user_query(&email, &password_hash).await
     }
 
-    // pub async fn user_login(&self, user_id: i32) -> Result<(), String> {
-    //     self.repository.user_login(user_id).await
-    // }
-
     pub async fn user_logout(&self, user_id: i32) -> Result<(), String> {
         self.repository.user_logout(user_id).await
     }
 
 
     pub async fn fetch_user_list(&self, room_id:i32) -> Result<Vec<i32>, String> {
-            self.repository.fetch_user_list(room_id).await
-        }
+        self.repository.fetch_user_list(room_id).await
+    }
 
     pub async fn fetch_user_status(&self, user_id_list: Vec<i32>) -> Result<Vec<(i32,String)>, String> {
         self.repository.fetch_user_status(user_id_list).await

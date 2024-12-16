@@ -23,7 +23,7 @@ But first, we need to set up the server:
 ```sh
 bash ./init.sh
 ```
-This will create three users and three chat rooms.
+This will create four users and three chat rooms.
 
 Then, we can try communicate with the server using `wscat`, for example:
 

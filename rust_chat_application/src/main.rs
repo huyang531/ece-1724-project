@@ -4,7 +4,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use tokio::sync::{broadcast, Mutex};
 use tower_http::{
-    add_extension::AddExtensionLayer, cors::{Any, CorsLayer}, trace::{DefaultMakeSpan, TraceLayer}
+    cors::{Any, CorsLayer}, trace::{DefaultMakeSpan, TraceLayer}
 };
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use std::{collections::HashMap, fmt::Display, net::SocketAddr, sync::Arc};
@@ -56,13 +56,12 @@ impl AppState {
         AppState {
             chat_channels: Arc::new(Mutex::new(HashMap::new())),
             pool: Pool::new("mysql://root:root@localhost/chat_app"),
-            // usernames: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 }
-//mysql://root:root@localhost/chat_app
 #[tokio::main]
 async fn main() {
+    // Initialize the logger
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
@@ -71,20 +70,19 @@ async fn main() {
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
-     // initilize the connection
-     //url format: mysql://username:password@localhost/database_name
-     //remember you also need to modify it at repository layer
+     
+     // Initilize the connection
      let database_url = "mysql://root:root@localhost/chat_app";
      let pool = Pool::new(database_url);
  
-     // initilize the database
+     // Initilize the database
      if let Err(e) = initialize_database(&pool).await {
          eprintln!("Failed to initialize database: {}", e);
          return;
      }
     // Build the application with routes
     let app = Router::new()
-        // .route("/", get(root))
+        .route("/", get(root))
         .route("/api/chatrooms", post(create_chat_room))
         .route("/api/chatrooms/join", post(join_chat_room))
         .route("/api/chatrooms/leave", post(leave_chat_room))
@@ -106,7 +104,6 @@ async fn main() {
         );
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    // let addr = SocketAddr::from(([0,0,0,0], 3000));
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     
     tracing::debug!("Listening on {}", listener.local_addr().unwrap());

@@ -1,4 +1,4 @@
-use axum::{extract::Query, extract::Json, response::IntoResponse};
+use axum::{extract::Json, response::IntoResponse};
 use serde::Deserialize;
 use lazy_static::lazy_static;
 use serde_json::json;
@@ -65,10 +65,6 @@ pub async fn user_signup(Json(payload): Json<SignupPayload>) -> impl IntoRespons
                 ),
             }
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"error": e})),
-        ),
     }
 }
 
@@ -76,7 +72,7 @@ pub async fn user_signup(Json(payload): Json<SignupPayload>) -> impl IntoRespons
 pub async fn user_login(Json(payload): Json<LoginPayload>) -> impl IntoResponse {
     let service = USERSERVICE.lock().await;
 
-    // 调用 user_query 并期望返回用户 ID 和用户名
+    // call user_query() to fetch username and id
     match service.user_query(payload.email, payload.password).await {
         Ok(Some((uid, username))) => (
             StatusCode::OK,
@@ -97,7 +93,6 @@ pub async fn user_login(Json(payload): Json<LoginPayload>) -> impl IntoResponse 
     }
 }
 
-// 修改后的 `user_logout`
 pub async fn user_logout(Json(payload): Json<LogoutPayload>) -> impl IntoResponse {
     let service = USERSERVICE.lock().await;
     match service.user_logout(payload.user_id).await {
@@ -144,6 +139,3 @@ pub async fn fetch_user_status(Json(params): Json<FetchOnlineStatusQuery>) -> im
         },
     }
 }
-
-
-
