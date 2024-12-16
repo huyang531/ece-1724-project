@@ -75,4 +75,5 @@ wscat -c ws://localhost:3011/ws/1
 |Yang Hu |Frontend + Message Module + Websocket|
 |Ze Yang |Database + Chatroom Functions + Backend Architecture|
 
-##Lessons Learned and Concluding Remarks
+## Lessons Learned and Concluding Remarks
+Don't be a last-time person.
