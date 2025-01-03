@@ -53,7 +53,7 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32,state: Arc<
         Ok(history) => {
             // Send chat history as messages
             for msg in history {
-                if sender.send(Message::Text(serde_json::to_string(&msg).unwrap())).await.is_err() {
+                if sender.send(Message::Text(serde_json::to_string(&msg).unwrap().into())).await.is_err() {
                     tracing::error!("Failed to send chat history to client {who}");
                     return;
                 }
@@ -67,7 +67,7 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32,state: Arc<
                 content: String::from("Failed to load chat history"),
                 timestamp: chrono::Utc::now(),
             };
-            if sender.send(Message::Text(serde_json::to_string(&err_msg).unwrap())).await.is_err() {
+            if sender.send(Message::Text(serde_json::to_string(&err_msg).unwrap().into())).await.is_err() {
                 return;
             }
         }
@@ -84,7 +84,7 @@ async fn handle_socket(socket: WebSocket, who: SocketAddr, chat: i32,state: Arc<
         loop {
             let msg = rx.recv().await.unwrap();
             cnt += 1;
-            if sender.send(Message::Text(serde_json::to_string(&msg).unwrap())).await.is_err() {
+            if sender.send(Message::Text(serde_json::to_string(&msg).unwrap().into())).await.is_err() {
                 tracing::info!("client {who} abruptly disconnected because we could not send message to it");
                 break;
             }

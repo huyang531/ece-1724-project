@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-axum = { version = "0.8.0-alpha.1", features = ["ws"] }
-axum-extra = { version = "0.10.0-alpha.1", features = ["typed-header"]}
+axum = { version = "0.8.1", features = ["ws"] }
+axum-extra = { version = "0.10.0", features = ["typed-header"]}
 tokio = { version = "1", features = ["full"] }
 mysql_async = "0.30.0"
 serde = { version = "1.0", features = ["derive"] }
